@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Italia — Regional Cuisine Atlas</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f5f0e8;
+    --parchment: #ede5d0;
+    --ink: #1a1208;
+    --terracotta: #c4603a;
+    --terracotta-light: #d4785a;
+    --olive: #6b7c45;
+    --olive-light: #8a9e5e;
+    --wine: #6b2737;
+    --gold: #c9972a;
+    --gold-light: #e8b84b;
+    --border: #b8a882;
+    --shadow: rgba(26, 18, 8, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background-color: var(--cream);
+    color: var(--ink);
+    font-family: 'Cormorant Garamond', serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Parchment texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.5;
+  }
+
+  header {
+    text-align: center;
+    padding: 2.5rem 2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  header::after {
+    content: '✦ ✦ ✦';
+    display: block;
+    font-size: 0.7rem;
+    color: var(--gold);
+    letter-spacing: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .title-eyebrow {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.35rem;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 0.4rem;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    font-weight: 400;
+    line-height: 1.1;
+    color: var(--ink);
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--terracotta);
+  }
+
+  .subtitle {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 1rem;
+    color: #6b5c3e;
+    margin-top: 0.4rem;
+  }
+
+  .progress-bar-wrap {
+    max-width: 340px;
+    margin: 1rem auto 0;
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    letter-spacing: 0.15rem;
+    text-transform: uppercase;
+    color: #8a7558;
+    margin-bottom: 0.35rem;
+  }
+
+  .progress-bar {
+    height: 5px;
+    background: var(--parchment);
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--terracotta), var(--gold));
+    border-radius: 3px;
+    transition: width 0.6s ease;
+    width: 0%;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 0;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    min-height: calc(100vh - 160px);
+  }
+
+  /* MAP SECTION */
+  .map-section {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-right: 2rem;
+  }
+
+  .map-container {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .map-container svg {
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 8px 24px var(--shadow));
+  }
+
+  .region-path {
+    stroke: #8a7558;
+    stroke-width: 0.8;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    fill: var(--parchment);
+  }
+
+  .region-path.filled {
+    fill: #d4a96a;
+  }
+
+  .region-path.filled.has-all {
+    fill: var(--terracotta);
+  }
+
+  .region-path:hover {
+    fill: var(--gold-light) !important;
+    stroke: var(--terracotta);
+    stroke-width: 1.5;
+    filter: brightness(1.05);
+  }
+
+  .region-path.active {
+    fill: var(--gold) !important;
+    stroke: var(--wine);
+    stroke-width: 1.8;
+  }
+
+  .region-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 7px;
+    fill: #3a2c1a;
+    pointer-events: none;
+    text-anchor: middle;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .map-legend {
+    display: flex;
+    gap: 1.2rem;
+    margin-top: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.1rem;
+    text-transform: uppercase;
+    color: #6b5c3e;
+  }
+
+  .legend-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+
+  /* PANEL SECTION */
+  .panel-section {
+    border-left: 1px solid var(--border);
+    padding-left: 2rem;
+  }
+
+  .panel-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 300px;
+    text-align: center;
+    color: #9a8a6e;
+  }
+
+  .panel-empty .big-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.4;
+  }
+
+  .panel-empty p {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    max-width: 240px;
+  }
+
+  .region-panel {
+    display: none;
+    animation: fadeSlide 0.3s ease;
+  }
+
+  .region-panel.visible {
+    display: block;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.18rem;
+    text-transform: uppercase;
+    color: #9a8a6e;
+    padding: 0 0 0.6rem 0;
+    transition: color 0.2s;
+  }
+  .back-btn:hover { color: var(--terracotta); }
+
+  .panel-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-region-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.9rem;
+    font-weight: 400;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+
+  .panel-region-name em {
+    display: block;
+    font-family: 'IM Fell English', serif;
+    font-size: 0.85rem;
+    color: var(--terracotta);
+    letter-spacing: 0.08rem;
+    margin-top: 0.2rem;
+  }
+
+  .panel-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.2rem;
+    text-transform: uppercase;
+    padding: 0.25rem 0.6rem;
+    border-radius: 2px;
+    border: 1px solid;
+  }
+
+  .panel-status.empty {
+    color: #9a8a6e;
+    border-color: var(--border);
+    background: transparent;
+  }
+
+  .panel-status.partial {
+    color: var(--gold);
+    border-color: var(--gold);
+    background: rgba(201, 151, 42, 0.08);
+  }
+
+  .panel-status.complete {
+    color: var(--terracotta);
+    border-color: var(--terracotta);
+    background: rgba(196, 96, 58, 0.08);
+  }
+
+  /* Category blocks */
+  .category-block {
+    margin-bottom: 1.4rem;
+  }
+
+  .category-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .category-icon {
+    font-size: 1rem;
+  }
+
+  .category-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.3rem;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    font-weight: 600;
+  }
+
+  .category-content {
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--ink);
+    min-height: 2.5rem;
+    padding: 0.6rem 0.8rem;
+    background: var(--parchment);
+    border-left: 2px solid var(--border);
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+    color: #6b5c3e;
+    transition: all 0.2s;
+  }
+
+  .category-content.has-content {
+    font-style: normal;
+    color: var(--ink);
+    border-left-color: var(--terracotta);
+  }
+
+  /* Edit mode */
+  .edit-btn {
+    display: block;
+    width: 100%;
+    margin-top: 1.2rem;
+    padding: 0.65rem 1rem;
+    background: var(--terracotta);
+    color: var(--cream);
+    border: none;
+    cursor: pointer;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.25rem;
+    text-transform: uppercase;
+    border-radius: 3px;
+    transition: all 0.2s;
+  }
+
+  .edit-btn:hover {
+    background: var(--wine);
+  }
+
+  .edit-btn.save {
+    background: var(--olive);
+  }
+
+  .edit-btn.save:hover {
+    background: #4a5c2e;
+  }
+
+  .edit-form {
+    display: none;
+  }
+
+  .edit-form.visible {
+    display: block;
+    animation: fadeSlide 0.2s ease;
+  }
+
+  .edit-form .field-group {
+    margin-bottom: 1rem;
+  }
+
+  .edit-form label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.2rem;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 0.3rem;
+  }
+
+  .edit-form textarea {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    color: var(--ink);
+    resize: vertical;
+    min-height: 70px;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+  }
+
+  .edit-form textarea:focus {
+    outline: none;
+    border-color: var(--terracotta);
+  }
+
+  .edit-form textarea::placeholder {
+    color: #b0a080;
+    font-style: italic;
+  }
+
+  .form-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .btn-cancel {
+    padding: 0.6rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.2rem;
+    text-transform: uppercase;
+    color: #8a7558;
+    border-radius: 3px;
+    transition: all 0.2s;
+  }
+
+  .btn-cancel:hover { border-color: #8a7558; color: var(--ink); }
+
+  .btn-save {
+    padding: 0.6rem;
+    background: var(--olive);
+    border: none;
+    cursor: pointer;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.2rem;
+    text-transform: uppercase;
+    color: var(--cream);
+    border-radius: 3px;
+    transition: all 0.2s;
+  }
+
+  .btn-save:hover { background: #4a5c2e; }
+
+  /* Region list in sidebar when nothing selected */
+  .data-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1.2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .data-btn {
+    padding: 0.45rem 0.9rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15rem;
+    text-transform: uppercase;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .export-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: #8a7558;
+  }
+  .export-btn:hover { border-color: var(--olive); color: var(--olive); }
+
+  .import-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: #8a7558;
+    display: inline-flex;
+    align-items: center;
+  }
+  .import-btn:hover { border-color: var(--terracotta); color: var(--terracotta); }
+
+  .region-index {
+    margin-top: 1rem;
+  }
+
+  .region-index-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.3rem;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 0.8rem;
+  }
+
+  .region-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.3rem;
+  }
+
+  .region-chip {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: var(--parchment);
+    color: var(--ink);
+    transition: all 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .region-chip:hover { border-color: var(--terracotta); color: var(--terracotta); }
+  .region-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+  .region-chip.partial .dot { background: var(--gold); }
+  .region-chip.complete .dot { background: var(--terracotta); }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed;
+    background: var(--ink);
+    color: var(--cream);
+    padding: 0.35rem 0.65rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-family: 'Cormorant Garamond', serif;
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+
+  .tooltip.visible { opacity: 1; }
+
+  @media (max-width: 900px) {
+    .layout {
+      grid-template-columns: 1fr;
+      padding: 1rem;
+    }
+    .map-section { padding-right: 0; padding-bottom: 1.5rem; }
+    .panel-section { border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-eyebrow">Culinary Arts — Italian Cuisine</div>
+  <h1><em>Italia</em> — Regional Cuisine Atlas</h1>
+  <p class="subtitle">A personal study companion for the twenty regions</p>
+  <div class="progress-bar-wrap">
+    <div class="progress-label">
+      <span>Regions Documented</span>
+      <span id="progress-count">0 / 20</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="map-section">
+    <div class="map-container">
+      <!-- Italy SVG Map -->
+      <svg viewBox="0 0 400 520" xmlns="http://www.w3.org/2000/svg" id="italy-map">
+        <defs>
+          <filter id="soft-shadow">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1a1208" flood-opacity="0.2"/>
+          </filter>
+        </defs>
+
+        <path class="region-path" id="reg-piemonte" d="M 26.3 88.1 L 27.8 82.9 L 25.6 81.5 L 27.8 79.4 L 28.3 79.4 L 32.2 78.0 L 36.1 76.3 L 36.7 75.5 L 37.5 75.1 L 50.7 67.9 L 49.5 61.0 L 52.1 57.2 L 53.0 57.1 L 58.4 47.6 L 57.1 45.3 L 63.5 39.0 L 65.3 37.8 L 67.7 37.1 L 68.6 37.6 L 68.8 41.3 L 67.9 43.9 L 74.8 58.5 L 73.6 59.7 L 72.2 61.2 L 72.5 62.9 L 74.5 70.3 L 77.0 78.3 L 80.7 82.8 L 78.7 83.6 L 77.0 85.7 L 74.1 85.6 L 71.1 85.2 L 71.1 86.4 L 72.3 91.2 L 71.3 92.3 L 72.4 93.6 L 84.9 102.6 L 88.0 105.8 L 87.6 106.6 L 90.5 108.4 L 92.6 110.8 L 92.3 113.6 L 92.2 116.7 L 87.7 116.5 L 82.4 115.6 L 65.1 122.4 L 59.9 126.2 L 55.8 130.3 L 50.4 138.7 L 48.0 138.0 L 47.3 137.7 L 44.1 138.9 L 40.6 136.8 L 35.7 137.7 L 34.8 138.2 L 33.1 137.6 L 29.9 136.5 L 25.0 133.8 L 23.3 133.5 L 21.8 131.3 L 20.6 130.5 L 19.9 124.3 L 19.2 123.9 L 20.3 115.2 L 22.5 108.3 L 19.9 106.2 L 18.2 106.7 L 16.0 105.6 L 13.2 99.2 L 11.6 99.3 L 11.5 94.8 L 16.0 93.8 L 16.9 94.3 L 24.1 91.1 L 26.3 88.1 Z" />
+        <text class="region-label" x="56.1" y="96.0">Piemonte</text>
+        <path class="region-path" id="reg-valle-d-aosta" d="M 45.4 60.4 L 46.9 60.2 L 49.5 61.7 L 51.2 68.1 L 37.0 75.3 L 36.3 76.0 L 35.4 76.6 L 31.6 77.9 L 27.8 79.4 L 27.2 79.2 L 24.3 79.7 L 17.8 70.9 L 17.3 70.6 L 16.1 64.1 L 16.9 63.9 L 21.0 62.8 L 22.5 60.7 L 24.7 62.1 L 36.6 59.9 L 38.0 58.8 L 38.8 58.9 L 45.4 60.4 Z" />
+        <text class="region-label" x="33.5" y="68.7">Valle d'Aosta</text>
+        <path class="region-path" id="reg-lombardia" d="M 72.4 67.8 L 72.2 62.1 L 72.7 60.6 L 74.8 58.5 L 75.7 57.6 L 79.4 53.0 L 80.9 55.0 L 81.6 58.8 L 83.4 61.1 L 83.2 63.6 L 88.3 62.0 L 86.0 57.9 L 87.1 54.5 L 88.3 52.3 L 89.0 51.6 L 93.8 38.5 L 94.6 36.3 L 100.3 38.9 L 101.2 41.2 L 102.1 42.0 L 107.4 44.0 L 108.3 44.5 L 111.9 42.0 L 117.1 41.7 L 117.6 43.5 L 118.7 45.1 L 121.6 43.6 L 121.1 42.7 L 121.2 38.7 L 120.4 38.9 L 119.3 35.1 L 125.6 31.3 L 126.8 32.4 L 127.2 33.0 L 130.4 33.6 L 134.7 35.8 L 136.2 36.7 L 137.6 37.8 L 136.3 40.8 L 135.2 41.3 L 135.4 42.8 L 135.1 52.6 L 144.1 64.1 L 143.1 66.7 L 142.4 67.8 L 141.7 69.0 L 141.3 69.6 L 137.9 73.9 L 138.1 77.1 L 138.2 79.3 L 137.8 81.1 L 139.0 81.7 L 140.1 82.0 L 142.8 86.6 L 143.9 87.5 L 150.1 93.8 L 152.1 95.9 L 155.7 95.8 L 161.2 100.9 L 162.8 102.3 L 161.8 102.0 L 160.5 102.1 L 159.7 102.0 L 155.5 102.9 L 153.9 102.5 L 151.7 102.3 L 146.2 104.0 L 145.8 103.8 L 144.0 102.9 L 143.4 102.8 L 135.0 103.9 L 124.5 98.7 L 121.2 99.2 L 115.7 95.7 L 114.3 94.5 L 107.9 97.3 L 97.7 98.1 L 97.7 99.1 L 96.9 106.9 L 95.2 109.9 L 95.9 111.2 L 96.3 111.6 L 92.5 113.0 L 92.0 110.7 L 90.0 108.6 L 88.0 106.2 L 87.7 105.3 L 85.1 102.0 L 71.8 93.4 L 71.9 91.7 L 71.7 91.3 L 70.9 85.7 L 71.5 84.9 L 74.8 86.1 L 77.6 85.9 L 79.2 83.8 L 80.4 82.3 L 76.7 77.8 L 74.8 69.7 L 72.4 67.8 Z M 85.0 57.8 L 85.0 57.8 Z M 76.4 99.1 L 76.4 99.6 L 76.4 99.4 L 76.4 99.1 Z M 80.0 99.2 L 80.0 99.2 L 79.9 99.4 L 80.0 99.2 Z" />
+        <text class="region-label" x="109.1" y="76.9">Lombardia</text>
+        <path class="region-path" id="reg-trentino" d="M 182.1 33.3 L 180.6 33.6 L 177.0 34.7 L 176.2 35.1 L 176.9 36.6 L 177.7 36.7 L 177.6 38.3 L 176.5 45.4 L 177.1 45.4 L 178.3 51.8 L 176.9 52.2 L 176.1 52.4 L 172.7 52.6 L 170.1 58.7 L 166.3 56.7 L 165.4 56.7 L 164.7 57.2 L 163.2 57.9 L 162.5 57.9 L 160.1 60.6 L 158.8 60.6 L 157.4 63.3 L 154.6 69.2 L 152.1 69.9 L 146.7 69.7 L 146.2 69.4 L 144.7 64.3 L 143.5 64.2 L 135.3 52.0 L 134.9 42.5 L 135.7 40.9 L 136.9 40.8 L 137.0 36.9 L 135.7 36.3 L 134.1 35.7 L 132.6 29.8 L 131.4 29.6 L 130.9 29.7 L 130.5 26.9 L 131.4 24.8 L 131.5 23.2 L 134.3 20.6 L 136.7 20.3 L 137.7 19.8 L 141.6 22.4 L 142.7 23.0 L 146.7 24.0 L 148.9 23.8 L 151.0 22.4 L 151.7 22.0 L 152.0 20.4 L 154.7 16.8 L 157.4 15.3 L 158.1 14.8 L 158.8 14.7 L 159.3 14.7 L 162.5 15.5 L 166.7 14.3 L 169.2 13.5 L 171.5 14.2 L 172.5 14.3 L 173.6 15.3 L 176.4 14.3 L 177.8 13.3 L 178.3 13.2 L 179.0 12.6 L 179.5 12.3 L 180.7 12.2 L 181.6 11.8 L 185.6 10.7 L 186.4 12.9 L 185.7 13.4 L 186.0 14.7 L 190.2 18.8 L 191.3 23.3 L 193.8 25.9 L 196.8 27.5 L 189.5 30.2 L 185.7 29.3 L 182.1 33.3 Z" />
+        <text class="region-label" x="160.0" y="38.6">Trentino-AA</text>
+        <path class="region-path" id="reg-veneto" d="M 138.1 77.1 L 138.0 75.7 L 139.5 72.0 L 141.7 69.0 L 142.2 68.2 L 142.8 67.1 L 143.4 66.1 L 145.1 64.5 L 146.7 69.7 L 147.1 70.0 L 152.7 70.2 L 155.3 68.6 L 157.5 62.4 L 159.3 60.6 L 160.6 60.9 L 163.2 57.9 L 164.0 57.9 L 165.2 57.0 L 166.0 56.6 L 166.8 56.6 L 170.7 58.6 L 173.6 52.6 L 176.6 52.3 L 177.7 52.0 L 178.6 51.3 L 176.6 45.4 L 176.1 44.8 L 178.1 38.0 L 176.9 36.6 L 176.4 36.5 L 176.7 34.9 L 177.7 34.6 L 181.2 33.6 L 186.2 29.6 L 190.0 29.9 L 199.1 28.5 L 200.9 28.8 L 202.2 35.9 L 196.1 41.5 L 209.0 63.5 L 210.1 64.8 L 213.6 67.0 L 216.0 72.9 L 213.7 73.1 L 212.2 73.4 L 211.3 73.7 L 209.5 74.7 L 207.2 75.9 L 206.3 76.6 L 205.2 77.3 L 203.8 77.8 L 202.7 78.3 L 201.9 78.6 L 200.8 79.2 L 197.3 80.7 L 196.5 81.0 L 193.4 82.8 L 191.5 87.8 L 191.3 89.0 L 192.2 92.9 L 192.4 96.0 L 194.3 98.2 L 194.8 98.6 L 196.4 99.9 L 197.2 100.5 L 197.8 100.7 L 198.2 103.0 L 197.7 104.1 L 197.2 105.4 L 196.5 106.9 L 195.0 107.9 L 189.9 102.6 L 189.3 103.0 L 184.0 101.4 L 177.0 101.3 L 176.5 101.4 L 166.8 102.9 L 163.6 103.2 L 160.7 100.7 L 156.3 95.5 L 151.4 95.5 L 149.6 93.7 L 143.2 86.9 L 141.7 87.5 L 139.1 81.8 L 138.7 82.3 L 138.3 81.0 L 138.2 78.6 L 138.1 77.1 Z" />
+        <text class="region-label" x="181.2" y="67.5">Veneto</text>
+        <path class="region-path" id="reg-friuli" d="M 230.1 40.6 L 229.5 41.1 L 227.9 47.9 L 233.1 52.1 L 231.2 53.5 L 230.1 54.4 L 233.9 59.2 L 232.7 64.8 L 233.5 65.8 L 241.7 73.8 L 238.9 75.1 L 237.9 74.6 L 238.1 74.0 L 235.9 69.1 L 235.3 68.4 L 231.6 66.6 L 231.2 68.7 L 229.2 69.8 L 225.6 70.9 L 224.1 70.6 L 223.4 70.2 L 220.3 69.4 L 219.6 69.5 L 213.1 66.5 L 209.6 64.4 L 208.4 63.6 L 196.5 41.1 L 201.8 35.5 L 216.3 31.1 L 218.5 31.7 L 222.2 32.9 L 222.9 32.9 L 226.7 32.5 L 227.2 33.0 L 228.8 33.0 L 231.0 33.2 L 233.5 33.7 L 234.7 34.3 L 235.2 34.5 L 236.2 34.6 L 234.5 38.0 L 233.4 38.1 L 232.8 38.2 L 232.2 38.6 L 230.3 40.5 L 230.1 40.6 Z M 230.8 66.4 L 230.8 66.4 Z M 238.4 73.9 L 238.4 73.9 Z M 238.4 73.9 L 238.4 73.9 Z M 238.4 73.8 L 238.4 73.8 Z M 238.5 73.8 L 238.5 73.8 Z M 238.5 73.8 L 238.5 73.8 Z M 238.5 73.8 L 238.5 73.8 Z M 238.5 73.8 L 238.5 73.8 Z M 238.5 73.8 L 238.5 73.8 Z M 238.5 73.8 L 238.5 73.8 Z M 238.3 73.8 L 238.3 73.8 Z M 238.5 73.8 L 238.5 73.8 Z M 238.3 73.8 L 238.3 73.8 L 238.3 73.8 L 238.3 73.8 Z M 238.3 73.8 L 238.3 73.8 Z M 238.6 73.8 L 238.6 73.8 Z M 238.3 73.8 L 238.3 73.8 Z M 238.3 73.8 L 238.3 73.8 Z M 238.3 73.8 L 238.3 73.8 Z M 238.4 73.8 L 238.4 73.8 Z M 238.3 73.8 L 238.3 73.8 Z M 238.4 73.8 L 238.4 73.8 Z M 238.6 73.8 L 238.6 73.8 Z M 238.4 73.8 L 238.4 73.8 Z M 238.4 73.8 L 238.4 73.8 Z M 238.4 73.8 L 238.4 73.8 Z M 238.4 73.7 L 238.4 73.7 Z M 238.6 73.7 L 238.6 73.7 Z M 238.4 73.7 L 238.4 73.7 Z M 237.2 73.6 L 237.2 73.6 Z M 237.2 72.9 L 237.2 72.9 Z M 237.2 72.6 L 237.2 72.6 Z M 237.9 72.2 L 237.9 72.2 Z M 237.9 72.2 L 237.9 72.2 Z M 238.0 71.9 L 238.0 71.9 Z M 236.7 70.0 L 236.7 70.0 Z M 236.6 70.0 L 236.6 70.0 Z M 236.4 69.5 L 236.3 69.5 L 236.3 69.5 L 236.4 69.5 Z M 236.2 69.4 L 236.2 69.4 Z M 235.9 69.1 L 235.9 69.1 L 235.9 69.1 L 235.9 69.1 Z M 235.1 68.3 L 235.1 68.3 Z" />
+        <text class="region-label" x="219.8" y="57.3">Friuli-VG</text>
+        <path class="region-path" id="reg-liguria" d="M 39.6 147.8 L 42.0 144.9 L 43.1 142.6 L 44.1 141.6 L 48.0 138.0 L 48.5 138.1 L 50.9 138.6 L 56.1 129.9 L 60.4 125.8 L 65.3 123.0 L 82.9 115.4 L 88.3 116.4 L 93.0 116.6 L 94.5 117.6 L 96.3 117.9 L 100.6 118.9 L 101.9 121.2 L 102.9 124.8 L 108.4 127.5 L 111.5 131.0 L 117.2 137.9 L 119.3 138.3 L 119.3 140.2 L 118.7 140.7 L 110.8 140.2 L 110.4 139.8 L 109.0 138.4 L 108.0 137.8 L 105.3 136.5 L 104.0 135.4 L 100.3 133.0 L 98.4 131.7 L 96.5 129.9 L 95.0 129.1 L 89.0 127.3 L 86.6 126.8 L 86.1 126.7 L 84.3 126.4 L 80.4 125.5 L 79.4 125.0 L 78.9 124.9 L 78.7 125.2 L 76.7 125.4 L 73.1 127.6 L 70.7 129.0 L 70.2 129.1 L 69.7 129.5 L 64.9 136.0 L 63.6 136.6 L 62.7 137.1 L 61.5 138.9 L 60.0 142.4 L 53.8 149.0 L 53.1 149.2 L 47.0 151.1 L 43.5 152.8 L 38.8 152.6 L 38.3 150.8 L 39.1 147.9 L 39.6 147.8 Z M 61.2 142.2 L 61.2 142.2 Z M 68.1 133.2 L 68.1 133.2 Z M 69.4 130.0 L 69.4 130.0 L 69.4 130.0 L 69.4 130.0 Z M 82.1 125.9 L 83.2 126.2 L 82.1 125.9 Z M 81.7 125.9 L 80.1 125.5 L 81.7 125.9 Z M 80.4 125.1 L 80.4 125.1 Z M 80.4 125.1 L 80.4 125.1 Z M 79.5 125.3 L 78.5 125.4 L 79.1 125.5 L 79.5 125.3 Z M 110.6 140.0 L 110.6 140.0 Z M 112.2 138.9 L 112.2 138.9 Z M 112.4 138.7 L 112.4 138.7 L 112.4 138.7 L 112.4 138.7 Z M 113.1 138.7 L 113.1 138.7 L 113.1 138.7 L 113.1 138.7 Z M 112.9 138.6 L 112.9 138.6 Z M 113.0 138.6 L 113.0 138.6 Z M 113.0 138.6 L 113.0 138.6 Z M 112.9 138.5 L 112.9 138.5 Z M 113.0 142.3 L 113.0 142.3 Z M 113.1 142.2 L 113.1 142.2 Z M 112.9 141.8 L 112.9 141.8 Z" />
+        <text class="region-label" x="78.1" y="131.7">Liguria</text>
+        <path class="region-path" id="reg-emilia-romagna" d="M 96.5 111.6 L 95.9 111.2 L 95.4 110.9 L 95.8 109.6 L 96.8 106.2 L 97.8 98.4 L 98.1 97.7 L 108.6 97.6 L 114.8 94.3 L 116.4 95.0 L 121.9 98.9 L 125.1 99.0 L 135.5 104.0 L 144.0 102.9 L 144.7 103.2 L 146.5 103.5 L 147.0 103.5 L 152.1 101.8 L 154.3 102.9 L 156.2 102.8 L 160.2 101.9 L 161.1 102.3 L 162.5 102.1 L 163.3 102.2 L 164.2 103.1 L 167.3 103.2 L 177.0 101.3 L 177.5 101.3 L 184.6 101.5 L 189.9 102.7 L 190.4 102.6 L 192.7 109.4 L 193.3 109.4 L 191.8 107.1 L 190.9 107.0 L 190.2 107.8 L 189.6 110.4 L 189.4 112.7 L 190.7 117.7 L 190.7 119.0 L 190.6 119.8 L 191.4 125.1 L 191.9 126.6 L 192.0 127.5 L 193.7 133.1 L 197.0 137.3 L 200.6 140.7 L 202.6 142.9 L 203.0 143.3 L 195.6 145.2 L 195.9 147.4 L 194.4 150.7 L 191.2 152.0 L 189.9 153.6 L 185.7 154.1 L 180.2 152.9 L 179.4 152.2 L 173.9 149.5 L 173.1 149.2 L 172.7 146.7 L 171.8 138.0 L 170.6 138.9 L 169.6 138.2 L 160.7 134.4 L 158.7 136.6 L 157.8 136.5 L 156.7 137.7 L 154.3 138.5 L 152.9 139.1 L 151.5 139.3 L 148.2 139.5 L 135.4 137.0 L 134.1 135.2 L 133.4 134.8 L 131.0 133.1 L 129.9 131.9 L 125.4 131.2 L 122.5 128.1 L 117.7 126.2 L 116.3 123.1 L 115.6 123.0 L 112.3 123.1 L 109.6 126.5 L 107.9 127.4 L 102.1 124.9 L 101.9 120.5 L 99.9 118.9 L 95.8 117.6 L 94.0 117.5 L 92.4 116.8 L 92.2 116.0 L 96.5 111.6 Z M 95.4 113.4 L 95.4 113.4 Z M 95.1 113.1 L 95.1 113.1 Z M 133.1 135.1 L 133.1 135.1 Z" />
+        <text class="region-label" x="151.0" y="122.1">Emilia-Romagna</text>
+        <path class="region-path" id="reg-toscana" d="M 114.5 136.2 L 111.0 130.6 L 107.9 127.5 L 108.7 126.8 L 110.1 126.5 L 113.1 123.0 L 116.3 123.1 L 116.8 123.3 L 118.1 126.5 L 122.9 128.5 L 125.8 131.7 L 130.6 132.5 L 131.5 133.5 L 134.0 135.2 L 134.5 135.8 L 136.2 137.6 L 148.7 138.8 L 152.1 139.3 L 153.4 138.8 L 154.8 138.4 L 156.2 137.3 L 158.4 136.4 L 159.3 136.0 L 161.3 134.5 L 170.1 138.5 L 171.0 138.5 L 172.3 138.1 L 172.6 147.5 L 173.8 149.4 L 174.5 149.7 L 180.0 152.3 L 180.7 153.2 L 186.2 154.0 L 190.6 153.4 L 193.2 155.4 L 192.3 157.0 L 189.5 157.0 L 189.1 158.1 L 187.6 158.7 L 186.6 163.5 L 185.2 166.5 L 183.3 169.2 L 186.5 174.1 L 186.9 174.2 L 187.9 172.9 L 188.4 174.2 L 180.0 179.4 L 179.5 182.3 L 168.4 210.7 L 167.5 210.6 L 162.1 212.5 L 161.4 212.3 L 160.1 212.1 L 153.8 212.9 L 154.8 205.3 L 150.4 201.3 L 149.5 199.5 L 149.2 198.8 L 145.6 196.6 L 143.8 196.1 L 142.1 195.5 L 141.5 195.1 L 142.6 190.4 L 140.5 189.0 L 136.8 188.4 L 134.7 184.4 L 134.9 182.7 L 131.4 169.2 L 130.4 167.9 L 127.4 163.4 L 126.3 152.8 L 125.5 149.8 L 120.7 142.8 L 119.2 140.2 L 119.9 139.6 L 118.6 138.1 L 117.0 137.3 L 114.5 136.2 Z M 121.2 204.4 L 121.2 204.4 Z M 120.9 204.1 L 120.9 204.1 Z M 120.3 202.7 L 120.3 202.7 Z M 126.3 197.4 L 124.9 198.1 L 122.8 198.0 L 121.7 197.5 L 122.2 194.6 L 126.6 194.3 L 127.2 194.2 L 128.4 194.3 L 128.6 195.2 L 129.9 193.8 L 130.3 193.1 L 129.3 197.3 L 126.3 197.4 Z M 131.0 198.9 L 131.0 198.9 Z M 129.3 198.8 L 129.3 198.8 Z M 129.3 198.8 L 129.3 198.8 Z M 130.8 198.8 L 130.8 198.8 Z M 129.7 198.6 L 129.7 198.6 Z M 129.7 198.6 L 129.7 198.6 Z M 129.8 198.6 L 129.8 198.6 Z M 128.0 197.9 L 128.0 197.9 Z M 111.3 185.0 L 111.3 185.0 Z M 112.5 184.3 L 111.1 185.4 L 111.5 184.2 L 112.5 184.3 Z M 114.6 167.4 L 114.6 167.4 Z M 124.8 162.8 L 124.8 162.8 Z M 128.3 215.6 L 127.9 216.0 L 127.3 215.9 L 128.3 215.6 Z M 119.8 214.1 L 119.8 214.1 Z M 128.3 193.8 L 128.3 193.8 Z M 135.3 192.6 L 135.3 192.6 Z M 132.9 192.3 L 132.9 192.3 Z M 133.0 192.1 L 133.0 192.1 Z M 131.3 192.0 L 131.3 192.0 Z M 188.0 153.2 L 188.1 153.0 L 188.0 153.2 Z M 188.6 160.4 L 188.6 160.3 L 188.6 160.4 L 188.6 160.4 Z M 140.6 195.1 L 140.6 195.1 Z M 146.6 205.5 L 146.6 205.5 Z M 146.4 205.2 L 146.4 205.2 Z M 146.0 204.7 L 146.0 204.7 Z M 153.4 218.3 L 153.4 218.3 Z M 146.0 214.4 L 146.0 214.4 Z M 147.5 214.2 L 147.5 214.2 Z M 146.1 212.7 L 146.7 213.0 L 146.1 214.7 L 146.1 212.7 Z M 153.9 213.3 L 153.9 213.3 Z M 156.5 213.2 L 156.5 213.2 Z M 152.4 211.5 L 152.4 211.5 Z M 154.1 210.8 L 154.1 210.8 L 154.1 210.8 L 154.1 210.8 Z" />
+        <text class="region-label" x="156.2" y="166.9">Toscana</text>
+        <path class="region-path" id="reg-umbria" d="M 218.7 201.3 L 208.8 205.7 L 203.2 210.4 L 200.1 212.7 L 189.4 205.0 L 188.4 201.2 L 183.2 201.5 L 179.2 181.3 L 180.4 179.2 L 188.8 173.8 L 187.5 173.4 L 186.5 174.1 L 186.0 173.8 L 182.7 169.1 L 185.6 166.3 L 186.8 162.9 L 189.8 161.0 L 192.1 163.6 L 194.0 163.8 L 196.3 164.1 L 197.6 163.9 L 202.0 167.8 L 202.9 167.6 L 204.5 167.3 L 207.3 173.1 L 208.0 174.9 L 208.9 177.3 L 210.9 188.4 L 217.1 191.1 L 217.5 191.9 L 218.0 192.4 L 218.6 193.5 L 219.4 193.4 L 220.4 193.2 L 219.8 196.8 L 218.7 201.3 Z M 194.7 160.4 L 194.7 160.4 Z" />
+        <text class="region-label" x="198.0" y="187.6">Umbria</text>
+        <path class="region-path" id="reg-marche" d="M 197.7 164.0 L 197.1 163.7 L 195.7 163.3 L 193.4 163.4 L 191.7 163.0 L 189.1 160.8 L 188.1 158.4 L 189.6 157.6 L 190.1 157.1 L 192.2 156.3 L 192.8 155.0 L 191.7 151.7 L 194.2 150.0 L 196.9 147.7 L 208.1 145.3 L 208.8 145.8 L 209.9 146.4 L 211.1 147.0 L 211.8 147.7 L 212.3 148.3 L 213.6 149.4 L 215.8 151.0 L 217.3 152.5 L 219.0 154.0 L 220.4 155.1 L 221.4 156.1 L 225.5 158.7 L 228.1 160.1 L 231.7 161.0 L 233.1 162.3 L 234.8 167.5 L 235.3 168.8 L 235.6 170.0 L 237.6 174.3 L 241.1 184.8 L 241.5 186.6 L 241.7 187.7 L 240.9 191.4 L 238.5 192.4 L 236.2 192.9 L 231.4 194.8 L 230.1 195.6 L 229.4 197.8 L 222.1 197.6 L 220.2 198.0 L 220.5 196.3 L 219.6 193.5 L 218.9 193.6 L 218.2 193.0 L 217.5 191.9 L 217.2 191.2 L 216.2 190.7 L 210.3 188.0 L 208.4 177.0 L 207.5 174.7 L 207.2 172.4 L 204.3 168.1 L 202.2 167.7 L 201.7 168.3 L 197.7 164.0 Z" />
+        <text class="region-label" x="213.0" y="172.1">Marche</text>
+        <path class="region-path" id="reg-lazio" d="M 175.6 194.7 L 183.8 201.4 L 188.8 201.6 L 190.0 205.4 L 200.8 212.2 L 203.7 210.1 L 209.3 205.4 L 221.0 198.2 L 222.6 197.6 L 225.2 204.6 L 222.0 204.4 L 218.6 209.5 L 218.5 211.5 L 219.0 213.6 L 222.3 218.5 L 225.0 222.3 L 222.7 223.7 L 216.4 223.3 L 214.8 224.4 L 221.0 230.3 L 228.0 237.1 L 241.8 241.2 L 245.5 245.7 L 245.8 249.4 L 241.2 254.6 L 241.4 257.2 L 240.2 260.5 L 239.7 262.1 L 232.4 261.9 L 226.7 261.0 L 219.6 260.6 L 217.4 261.9 L 215.8 263.1 L 213.4 258.8 L 211.6 256.6 L 210.0 255.4 L 209.2 255.0 L 200.3 251.1 L 198.2 248.1 L 197.8 247.7 L 196.7 246.2 L 195.6 245.0 L 193.6 243.1 L 192.3 242.2 L 191.9 241.9 L 190.8 241.3 L 190.0 241.0 L 188.5 237.9 L 181.0 229.7 L 179.1 227.9 L 176.9 228.2 L 175.5 226.1 L 171.1 218.3 L 166.2 214.2 L 164.4 213.3 L 168.3 210.7 L 168.9 210.7 L 175.6 194.7 Z M 189.7 240.9 L 189.7 240.9 L 189.7 240.9 L 189.7 240.9 Z M 189.6 240.8 L 189.6 240.9 L 189.6 240.9 L 189.6 240.8 Z M 189.5 240.8 L 189.5 240.8 L 189.5 240.8 L 189.5 240.8 Z M 217.0 279.6 L 217.0 279.6 Z M 212.5 277.6 L 212.5 277.6 Z M 208.9 276.1 L 208.9 276.1 Z M 208.7 276.0 L 208.7 276.0 Z M 208.8 276.1 L 208.8 276.1 Z M 208.8 275.9 L 208.8 275.9 Z M 212.6 276.0 L 212.3 277.1 L 212.6 276.0 Z M 213.6 275.5 L 213.6 275.5 Z M 208.9 275.1 L 208.9 275.1 Z M 208.8 275.1 L 208.8 275.1 Z M 209.2 275.6 L 209.2 275.6 Z M 215.5 274.1 L 215.5 274.1 Z M 228.2 281.8 L 228.2 281.8 Z M 227.3 281.7 L 227.3 281.7 Z" />
+        <text class="region-label" x="206.5" y="224.1">Lazio</text>
+        <path class="region-path" id="reg-abruzzo" d="M 243.7 243.0 L 241.1 241.1 L 227.4 236.9 L 220.5 230.1 L 215.5 224.2 L 216.6 222.6 L 223.4 223.5 L 224.6 221.9 L 221.8 218.1 L 219.6 213.2 L 218.2 211.0 L 219.1 209.1 L 222.5 204.4 L 225.8 204.5 L 229.7 197.3 L 230.5 195.2 L 231.9 195.0 L 236.7 192.7 L 239.2 192.1 L 241.6 191.2 L 243.2 192.5 L 243.7 194.4 L 245.3 198.6 L 249.5 205.8 L 250.2 206.5 L 251.2 207.9 L 254.8 211.3 L 257.1 213.0 L 259.7 216.0 L 260.4 216.7 L 264.4 220.4 L 267.9 222.0 L 268.5 223.7 L 268.0 230.5 L 259.9 236.6 L 258.6 235.3 L 257.7 235.3 L 252.5 235.8 L 247.8 240.8 L 246.7 242.4 L 244.4 242.6 L 243.7 243.0 Z M 253.0 209.4 L 253.0 209.4 L 253.0 209.4 L 253.0 209.4 Z M 253.0 209.4 L 253.0 209.4 L 253.0 209.4 L 253.0 209.4 Z" />
+        <text class="region-label" x="242.5" y="223.2">Abruzzo</text>
+        <path class="region-path" id="reg-molise" d="M 259.0 253.9 L 257.1 253.3 L 249.8 251.0 L 249.0 251.7 L 248.1 253.3 L 248.8 254.3 L 248.6 255.8 L 246.5 255.0 L 246.2 249.2 L 245.4 245.1 L 245.0 242.7 L 247.3 242.4 L 248.4 240.8 L 252.8 235.2 L 258.2 235.1 L 259.2 235.9 L 260.0 237.3 L 268.4 229.9 L 276.0 229.0 L 276.6 229.2 L 277.3 229.3 L 279.4 231.2 L 280.0 231.9 L 282.1 242.0 L 281.8 242.5 L 280.0 244.0 L 275.3 253.1 L 271.9 253.9 L 271.5 253.5 L 268.5 255.3 L 262.6 256.1 L 259.0 253.9 Z" />
+        <text class="region-label" x="262.4" y="243.1">Molise</text>
+        <path class="region-path" id="reg-campania" d="M 249.6 250.7 L 250.4 251.8 L 257.8 253.5 L 263.2 256.3 L 269.4 255.0 L 271.9 253.9 L 272.5 254.2 L 275.8 253.0 L 283.9 260.3 L 285.1 264.4 L 285.6 267.4 L 286.5 268.3 L 291.2 268.6 L 291.7 269.2 L 293.9 269.9 L 294.4 270.1 L 292.5 277.3 L 288.9 277.6 L 291.8 286.1 L 297.5 297.4 L 298.6 298.7 L 299.9 299.2 L 300.0 300.9 L 301.2 302.6 L 301.5 307.0 L 297.7 313.4 L 296.1 312.4 L 295.3 312.5 L 294.7 312.5 L 291.3 315.5 L 289.8 315.7 L 288.5 315.5 L 274.6 305.2 L 275.1 304.4 L 274.6 292.4 L 266.1 287.8 L 262.8 289.3 L 255.8 290.4 L 256.2 289.5 L 260.6 285.7 L 257.2 281.8 L 253.0 279.9 L 251.6 281.6 L 249.8 280.4 L 246.6 277.0 L 245.7 274.8 L 244.9 273.6 L 243.2 271.6 L 242.7 270.0 L 241.0 266.8 L 238.0 263.0 L 240.2 261.8 L 240.8 260.1 L 241.5 256.5 L 241.6 254.2 L 246.8 255.6 L 249.1 256.0 L 248.3 253.7 L 248.3 252.8 L 249.4 251.2 L 249.6 250.7 Z M 253.0 292.4 L 252.2 292.5 L 253.0 292.4 Z M 244.1 285.2 L 244.1 285.2 Z M 253.7 292.5 L 253.7 292.5 Z M 253.6 292.4 L 253.6 292.4 Z M 253.8 292.3 L 253.8 292.3 Z M 257.6 290.4 L 257.6 290.4 Z M 251.5 281.6 L 251.5 281.6 Z M 250.7 280.9 L 250.7 280.9 Z M 252.7 280.1 L 252.7 280.1 Z M 252.6 280.1 L 252.6 280.1 Z M 252.7 280.1 L 252.7 280.1 Z M 255.2 279.9 L 255.2 279.9 Z M 246.1 282.5 L 246.1 282.5 Z M 260.4 284.3 L 260.4 284.3 Z M 257.1 281.9 L 257.1 281.9 L 257.1 281.9 L 257.1 281.9 Z M 257.1 281.9 L 257.1 281.9 L 257.1 281.9 L 257.1 281.9 Z M 257.1 281.9 L 257.1 281.9 L 257.1 281.9 L 257.1 281.9 Z M 274.3 304.9 L 274.3 304.9 Z M 286.9 314.7 L 286.9 314.7 Z M 259.3 290.8 L 259.3 290.8 Z M 259.3 290.6 L 259.3 290.6 Z M 259.5 290.6 L 259.5 290.6 Z" />
+        <text class="region-label" x="273.9" y="279.8">Campania</text>
+        <path class="region-path" id="reg-puglia" d="M 280.7 255.8 L 280.4 243.7 L 282.4 242.2 L 281.4 241.6 L 282.4 232.8 L 284.8 233.0 L 286.1 233.0 L 291.8 233.7 L 293.1 233.5 L 294.3 233.3 L 295.0 233.2 L 295.9 233.0 L 302.4 233.0 L 303.3 232.9 L 305.1 232.7 L 306.2 232.5 L 307.0 232.4 L 308.3 232.1 L 313.2 233.1 L 312.8 241.2 L 310.9 243.1 L 306.9 250.8 L 308.9 253.4 L 311.7 254.9 L 312.2 255.2 L 314.3 256.4 L 319.9 259.1 L 323.0 260.5 L 323.6 261.2 L 327.7 263.2 L 332.5 265.2 L 333.6 265.5 L 334.3 265.7 L 335.9 266.7 L 338.7 267.8 L 344.4 269.9 L 346.0 271.0 L 347.7 272.0 L 348.7 272.8 L 354.6 278.0 L 355.2 278.6 L 357.2 280.3 L 358.8 281.1 L 360.1 281.5 L 361.0 281.9 L 362.8 282.5 L 364.0 283.0 L 364.5 283.4 L 366.0 284.5 L 366.9 285.0 L 367.9 285.8 L 369.0 286.1 L 371.0 286.4 L 377.3 294.3 L 378.8 295.0 L 382.8 298.6 L 383.9 300.0 L 386.1 302.6 L 387.5 314.6 L 387.2 315.7 L 386.3 317.5 L 380.0 322.7 L 377.2 320.7 L 376.6 320.3 L 373.3 316.1 L 372.2 309.4 L 369.1 303.6 L 366.7 303.1 L 366.1 303.0 L 363.1 302.6 L 361.8 302.7 L 360.9 302.8 L 358.9 302.9 L 357.7 303.0 L 352.6 300.5 L 351.4 299.9 L 348.9 298.4 L 349.6 296.7 L 347.9 295.1 L 341.6 294.2 L 337.7 297.7 L 337.3 298.3 L 335.8 297.6 L 332.5 295.1 L 332.2 289.2 L 332.5 287.1 L 331.7 285.5 L 331.4 284.2 L 326.9 284.5 L 326.2 284.0 L 324.3 284.4 L 321.8 284.2 L 320.1 282.7 L 319.7 282.1 L 315.3 275.9 L 312.7 276.3 L 310.2 270.4 L 309.7 270.1 L 308.2 268.6 L 301.6 268.4 L 299.2 268.9 L 296.4 268.4 L 293.9 269.9 L 293.2 269.6 L 291.2 268.6 L 290.6 268.3 L 286.1 268.0 L 285.1 266.6 L 285.7 264.1 L 283.4 260.3 L 280.7 255.8 Z M 293.5 224.3 L 293.5 224.3 Z M 292.9 225.0 L 292.9 225.0 Z M 293.6 224.4 L 293.6 224.4 Z M 293.8 223.9 L 293.8 223.9 Z M 301.3 219.7 L 301.3 219.7 Z M 315.9 237.5 L 315.9 237.5 Z M 315.5 236.2 L 315.5 236.2 Z M 315.3 234.2 L 315.3 234.2 Z M 313.0 232.6 L 313.0 232.6 Z M 347.0 296.8 L 347.0 296.8 Z M 346.6 296.2 L 346.6 296.2 Z M 374.2 288.0 L 374.2 288.0 Z M 373.5 287.5 L 373.5 287.5 Z M 373.3 287.8 L 373.3 287.8 Z M 373.2 287.5 L 373.2 287.5 Z M 373.1 287.4 L 373.1 287.4 Z M 373.1 287.4 L 373.1 287.4 Z M 373.1 287.4 L 373.1 287.4 Z M 367.8 285.4 L 367.8 285.4 Z M 367.8 285.4 L 367.8 285.4 Z M 367.3 285.0 L 367.3 285.0 Z M 367.2 285.0 L 367.2 285.0 Z M 371.8 313.5 L 371.8 313.5 Z M 372.4 313.4 L 372.4 313.4 Z M 389.4 311.8 L 389.4 311.8 Z M 377.3 320.9 L 377.3 320.9 Z M 377.2 320.8 L 377.2 320.8 Z M 376.4 320.2 L 376.4 320.2 Z M 369.9 304.8 L 369.9 304.8 Z M 369.8 304.8 L 369.8 304.8 Z M 369.2 304.2 L 369.2 304.2 Z" />
+        <text class="region-label" x="332.6" y="277.3">Puglia</text>
+        <path class="region-path" id="reg-basilicata" d="M 292.4 288.4 L 291.3 285.9 L 289.5 277.5 L 293.1 277.1 L 296.9 268.5 L 300.5 268.8 L 302.0 268.9 L 308.7 268.6 L 310.2 270.4 L 310.7 270.9 L 313.2 276.8 L 315.9 276.2 L 320.1 282.7 L 320.5 283.2 L 322.2 284.9 L 324.8 284.0 L 326.7 284.5 L 326.8 283.8 L 331.9 284.5 L 332.3 286.0 L 332.3 287.7 L 332.6 289.8 L 333.0 295.6 L 336.2 298.0 L 336.8 299.3 L 336.0 300.6 L 334.6 302.7 L 333.1 306.5 L 332.1 308.1 L 330.2 310.6 L 320.3 318.5 L 317.5 318.7 L 310.2 319.0 L 304.9 315.7 L 303.0 316.8 L 302.0 318.7 L 300.9 317.3 L 300.5 316.7 L 302.0 306.6 L 300.8 302.2 L 300.0 300.2 L 299.4 298.8 L 298.3 298.2 L 297.0 297.0 L 292.4 288.4 Z M 300.4 317.2 L 300.4 317.2 Z M 329.7 283.2 L 329.7 283.2 Z" />
+        <text class="region-label" x="308.8" y="294.4">Basilicata</text>
+        <path class="region-path" id="reg-calabria" d="M 308.6 338.7 L 306.4 335.7 L 304.7 332.2 L 304.3 330.9 L 304.1 330.1 L 303.4 328.2 L 303.0 326.0 L 301.7 319.0 L 302.2 318.1 L 303.3 316.2 L 305.2 316.2 L 310.7 319.3 L 318.1 318.5 L 320.6 317.9 L 328.2 319.5 L 326.7 321.2 L 325.0 325.1 L 326.3 327.5 L 327.5 331.1 L 330.7 332.1 L 339.6 337.2 L 345.0 341.2 L 345.2 344.5 L 345.4 352.0 L 346.9 357.4 L 347.7 357.7 L 345.2 362.4 L 344.7 362.9 L 343.4 362.4 L 340.2 361.5 L 338.9 361.7 L 338.1 361.9 L 333.5 363.8 L 332.8 364.2 L 332.1 364.7 L 330.4 366.0 L 327.7 368.6 L 326.9 370.5 L 327.4 375.2 L 327.8 379.8 L 326.1 385.5 L 321.8 388.4 L 317.7 392.3 L 313.6 401.6 L 313.2 402.7 L 312.9 403.4 L 312.1 404.4 L 310.5 405.2 L 307.3 405.0 L 304.8 405.3 L 298.7 403.2 L 298.4 402.7 L 302.9 389.9 L 303.4 389.3 L 306.5 381.8 L 306.8 380.5 L 305.3 376.5 L 304.2 374.1 L 306.3 372.6 L 312.2 355.3 L 311.4 349.4 L 311.3 347.7 L 311.2 346.7 L 311.1 346.0 L 310.7 344.2 L 308.6 338.7 Z M 303.1 328.8 L 303.1 328.8 Z M 302.4 321.3 L 302.4 321.3 Z M 302.4 322.3 L 302.4 322.3 Z M 302.7 321.9 L 302.7 321.9 Z" />
+        <text class="region-label" x="319.6" y="352.8">Calabria</text>
+        <path class="region-path" id="reg-sicilia" d="M 210.7 400.9 L 214.2 399.4 L 220.5 394.4 L 221.2 393.9 L 224.1 392.8 L 227.5 397.8 L 230.5 397.2 L 231.7 400.2 L 232.5 400.8 L 239.0 403.0 L 242.2 401.8 L 242.8 401.4 L 243.5 401.0 L 244.5 400.6 L 245.8 400.6 L 247.6 401.1 L 251.0 401.2 L 256.4 401.1 L 261.3 400.4 L 262.2 400.2 L 268.8 395.6 L 269.3 395.0 L 277.7 395.5 L 278.4 395.5 L 286.9 393.1 L 289.4 392.3 L 291.7 391.2 L 294.8 389.0 L 297.0 390.1 L 297.5 390.8 L 294.5 395.9 L 294.2 396.4 L 293.8 397.6 L 293.3 398.7 L 291.7 400.8 L 290.5 402.7 L 289.9 403.5 L 287.7 406.8 L 284.7 411.9 L 281.7 422.0 L 280.4 426.7 L 280.5 427.6 L 280.4 429.2 L 281.7 431.8 L 284.7 433.4 L 285.3 438.8 L 288.2 444.5 L 276.1 458.3 L 268.5 457.1 L 263.3 454.4 L 260.5 453.0 L 258.4 448.0 L 256.4 445.1 L 255.6 444.1 L 255.2 443.6 L 254.2 442.9 L 252.4 441.8 L 251.0 441.1 L 248.2 440.4 L 246.8 440.4 L 245.7 440.3 L 243.9 440.7 L 241.1 440.2 L 237.6 438.6 L 235.8 437.2 L 235.0 436.7 L 228.6 432.4 L 225.1 429.8 L 223.9 429.4 L 219.1 424.0 L 216.8 423.4 L 216.1 423.3 L 214.4 423.7 L 213.4 421.9 L 211.0 420.2 L 207.6 420.0 L 206.6 420.0 L 206.1 420.1 L 198.2 416.6 L 196.4 406.0 L 197.6 401.3 L 199.2 400.0 L 201.8 398.9 L 204.6 394.8 L 206.9 396.1 L 210.7 400.9 Z M 198.6 399.2 L 198.6 399.2 Z M 191.2 405.8 L 191.2 405.8 Z M 190.9 405.7 L 190.9 405.7 Z M 191.3 405.6 L 191.3 405.6 Z M 191.5 404.0 L 191.8 404.6 L 192.9 405.9 L 191.8 405.4 L 191.5 404.0 Z M 183.7 402.4 L 183.7 402.4 Z M 192.1 402.5 L 192.1 402.5 Z M 195.3 402.5 L 195.3 402.5 Z M 195.0 402.5 L 195.0 402.5 Z M 192.3 401.1 L 192.3 401.1 Z M 196.3 407.9 L 196.3 407.9 Z M 196.7 407.5 L 196.7 407.5 Z M 196.5 407.2 L 196.5 407.2 Z M 196.1 406.4 L 195.7 407.8 L 196.1 406.4 Z M 180.2 452.0 L 182.6 456.5 L 181.5 456.4 L 180.2 452.0 Z M 197.5 401.5 L 197.5 401.5 Z M 197.3 401.4 L 197.3 401.4 Z M 196.7 413.6 L 196.7 413.6 Z M 221.1 392.8 L 221.1 392.8 Z M 219.4 370.9 L 218.7 371.3 L 219.4 370.9 Z M 272.6 378.8 L 272.1 378.4 L 271.4 378.1 L 272.4 376.9 L 272.6 378.8 Z M 275.6 384.7 L 275.6 384.7 Z M 276.4 384.2 L 277.1 384.5 L 277.4 384.9 L 275.6 384.6 L 276.4 384.2 Z M 276.3 379.5 L 276.4 380.1 L 276.3 379.5 Z M 256.8 379.1 L 256.8 379.1 Z M 264.3 377.9 L 262.9 377.3 L 264.3 377.9 Z M 279.5 375.0 L 279.5 375.0 Z M 280.9 374.6 L 280.9 374.6 Z M 281.1 374.5 L 281.1 374.5 Z M 280.6 374.4 L 280.6 374.4 Z M 281.2 374.4 L 281.2 374.4 Z M 279.6 374.1 L 279.6 374.1 Z M 279.4 375.0 L 279.4 375.0 Z M 281.0 373.3 L 281.0 373.3 Z M 281.3 373.5 L 281.3 373.5 Z M 284.4 368.7 L 283.8 368.3 L 284.4 368.7 Z M 287.2 408.4 L 287.2 408.4 Z M 199.6 509.3 L 199.6 509.3 Z M 198.6 508.5 L 198.6 508.5 Z M 198.7 508.5 L 201.6 508.8 L 199.9 509.3 L 198.9 509.0 L 198.7 508.5 Z M 191.9 507.5 L 191.9 507.5 Z M 209.7 493.6 L 209.1 494.4 L 209.7 493.6 Z M 241.0 440.2 L 241.0 440.2 Z M 282.8 421.0 L 282.8 421.0 Z M 282.9 420.9 L 282.9 420.9 Z M 275.4 458.6 L 275.4 458.6 Z M 284.1 434.9 L 284.1 434.9 Z M 285.4 434.4 L 285.4 434.4 L 285.4 434.4 L 285.4 434.4 Z M 280.9 454.1 L 280.9 454.1 Z M 281.3 456.4 L 281.3 456.4 Z M 286.0 446.0 L 286.0 446.0 Z M 282.1 458.8 L 282.1 458.8 Z" />
+        <text class="region-label" x="253.2" y="419.1">Sicilia</text>
+        <path class="region-path" id="reg-sardegna" d="M 64.7 294.2 L 64.7 294.2 Z M 63.5 291.1 L 63.5 291.1 Z M 58.7 291.2 L 58.7 291.2 Z M 58.4 289.6 L 58.4 289.6 Z M 65.6 294.3 L 65.0 294.0 L 64.3 292.9 L 60.8 291.1 L 60.8 290.1 L 59.3 290.5 L 59.8 288.3 L 60.0 287.4 L 59.1 282.8 L 60.9 278.3 L 60.4 276.5 L 61.1 274.6 L 61.8 277.3 L 62.5 278.0 L 65.6 279.0 L 65.7 279.6 L 66.6 279.6 L 67.7 279.9 L 70.5 280.2 L 73.7 278.6 L 74.7 277.3 L 81.2 273.6 L 82.0 271.5 L 83.6 270.7 L 84.0 270.3 L 84.4 269.7 L 84.8 269.2 L 88.4 267.1 L 89.3 266.8 L 90.6 266.0 L 91.2 262.7 L 94.0 262.1 L 98.8 265.0 L 99.9 268.2 L 102.8 269.4 L 102.4 271.4 L 104.7 272.0 L 104.7 273.0 L 104.4 274.6 L 103.2 275.8 L 102.7 276.3 L 103.3 276.1 L 103.8 276.1 L 105.9 277.0 L 106.0 277.6 L 108.7 279.4 L 108.3 283.2 L 108.7 284.5 L 111.8 295.0 L 111.2 296.6 L 110.2 298.9 L 106.0 303.8 L 105.9 307.5 L 106.7 309.1 L 107.7 310.7 L 109.1 311.8 L 108.2 315.0 L 107.7 317.4 L 107.5 323.5 L 106.1 336.5 L 104.9 343.6 L 101.4 353.0 L 100.3 353.2 L 99.0 352.8 L 96.2 350.2 L 93.9 349.5 L 89.8 350.0 L 88.3 350.0 L 86.9 355.9 L 87.1 357.0 L 84.1 361.3 L 81.4 363.9 L 73.8 361.7 L 72.3 359.7 L 67.0 354.5 L 66.4 348.2 L 67.0 340.8 L 67.3 337.1 L 68.1 335.8 L 68.2 326.9 L 69.6 327.6 L 71.5 323.4 L 68.1 320.8 L 69.3 312.5 L 68.6 309.2 L 66.3 301.2 L 66.0 300.2 L 66.6 298.7 L 66.3 296.3 L 65.6 294.3 Z M 76.6 276.1 L 76.6 276.1 Z M 104.5 269.7 L 104.5 269.7 Z M 104.2 270.0 L 104.2 270.0 Z M 104.6 269.7 L 104.6 269.7 Z M 104.6 269.4 L 104.6 269.4 Z M 105.0 269.2 L 105.0 269.2 Z M 105.3 269.2 L 105.3 269.2 Z M 104.3 268.7 L 104.3 268.7 Z M 104.4 268.6 L 104.4 268.6 Z M 104.0 267.6 L 104.0 267.6 Z M 104.1 267.5 L 104.1 267.5 Z M 103.9 267.3 L 103.9 267.3 Z M 104.1 267.2 L 104.1 267.2 Z M 103.9 267.2 L 103.9 267.2 Z M 104.0 267.0 L 104.0 267.0 Z M 101.9 266.0 L 101.9 266.0 Z M 102.4 265.6 L 102.4 265.6 Z M 102.5 265.6 L 102.5 265.6 Z M 100.5 265.1 L 100.5 265.1 Z M 100.6 265.2 L 100.6 265.2 Z M 101.4 264.7 L 101.4 264.7 Z M 101.4 264.8 L 101.4 264.8 Z M 98.5 264.2 L 98.5 264.2 Z M 100.0 263.9 L 100.0 263.9 Z M 98.9 264.6 L 98.9 264.6 Z M 100.1 263.6 L 100.1 263.6 Z M 99.2 263.6 L 99.2 263.6 Z M 102.4 263.3 L 102.4 263.3 Z M 102.4 263.3 L 102.4 263.3 Z M 102.4 263.2 L 102.4 263.2 Z M 102.4 263.2 L 102.4 263.2 Z M 100.2 263.1 L 100.2 263.1 Z M 100.4 262.9 L 100.4 262.9 Z M 96.6 262.8 L 96.6 262.8 Z M 100.4 262.8 L 100.4 262.8 Z M 97.3 262.0 L 97.3 262.0 Z M 100.9 262.0 L 100.9 262.0 Z M 97.2 262.0 L 97.2 262.0 Z M 98.5 261.9 L 98.5 261.9 Z M 96.2 261.9 L 96.2 261.9 Z M 96.8 261.8 L 96.8 261.8 Z M 98.6 261.7 L 98.6 261.7 Z M 99.6 261.4 L 99.3 263.4 L 99.6 261.4 Z M 98.7 260.7 L 98.7 260.7 Z M 97.5 260.4 L 97.5 260.4 Z M 97.5 260.4 L 97.5 260.4 Z M 97.5 260.3 L 97.5 260.3 Z M 98.6 260.5 L 98.6 260.5 Z M 96.6 260.3 L 96.6 260.3 Z M 97.5 260.3 L 97.5 260.3 Z M 98.6 260.3 L 98.6 260.3 Z M 98.6 260.2 L 98.6 260.2 Z M 97.4 260.2 L 97.4 260.2 Z M 97.2 260.7 L 97.2 260.7 Z M 96.5 259.9 L 96.5 259.9 Z M 96.6 259.9 L 96.6 259.9 Z M 96.6 259.9 L 96.6 259.9 Z M 96.5 259.9 L 96.5 259.9 Z M 96.5 259.9 L 96.5 259.9 Z M 98.8 260.0 L 98.8 260.0 Z M 98.7 260.0 L 98.7 260.0 Z M 98.6 259.6 L 98.6 259.6 Z M 98.0 259.4 L 98.0 259.4 Z M 96.8 259.4 L 96.8 259.4 Z M 97.6 259.3 L 97.6 259.3 Z M 97.9 259.3 L 97.9 259.3 Z M 97.6 259.1 L 97.6 259.1 Z M 108.4 278.0 L 108.4 278.0 Z M 110.7 278.1 L 110.7 278.1 Z M 109.2 278.0 L 108.6 278.4 L 109.2 278.0 Z M 107.3 277.9 L 107.3 277.9 Z M 106.3 277.5 L 106.3 277.5 Z M 106.8 277.4 L 106.8 277.4 Z M 107.2 277.2 L 107.2 277.2 Z M 107.4 277.1 L 107.4 277.1 Z M 104.5 276.7 L 104.5 276.7 Z M 102.6 276.2 L 102.6 276.2 Z M 102.1 276.2 L 102.1 276.2 Z M 102.1 276.2 L 102.1 276.2 Z M 106.5 276.2 L 106.5 276.2 Z M 103.9 276.1 L 103.9 276.1 Z M 106.2 276.1 L 106.2 276.1 Z M 106.0 276.1 L 106.0 276.1 Z M 106.3 276.1 L 106.3 276.1 Z M 106.3 276.0 L 106.3 276.0 Z M 102.2 276.0 L 102.2 276.0 Z M 106.1 276.0 L 106.1 276.0 Z M 106.1 275.9 L 106.1 275.9 Z M 109.3 276.0 L 107.9 276.9 L 108.5 276.5 L 109.3 276.0 Z M 102.6 275.6 L 102.6 275.6 Z M 102.7 270.8 L 102.7 270.8 Z M 96.5 264.4 L 96.5 264.4 Z M 61.1 274.1 L 61.1 274.1 Z M 60.7 273.8 L 60.7 273.8 Z M 60.7 273.4 L 60.7 273.4 Z M 60.7 273.2 L 60.7 273.2 Z M 60.6 273.2 L 60.6 273.2 Z M 62.0 271.4 L 62.0 271.4 Z M 64.3 268.1 L 63.6 270.1 L 61.9 271.2 L 60.6 273.2 L 61.7 270.6 L 64.3 268.1 Z M 89.6 265.8 L 89.6 265.8 Z M 89.6 265.8 L 89.6 265.8 Z M 94.7 262.6 L 94.7 262.6 Z M 91.7 261.9 L 91.7 261.9 Z M 93.5 261.7 L 93.5 261.7 Z M 93.5 261.6 L 93.5 261.6 Z M 93.6 261.6 L 93.6 261.6 Z M 81.5 272.1 L 81.5 272.1 Z M 104.6 274.4 L 104.6 274.4 Z M 106.4 273.6 L 106.4 273.6 Z M 60.7 277.8 L 60.7 277.8 Z M 59.4 275.3 L 59.4 275.3 Z M 60.5 273.9 L 60.5 273.9 Z M 110.3 286.2 L 110.3 286.2 Z M 108.7 284.0 L 108.7 284.0 Z M 108.5 280.1 L 108.5 280.1 Z M 109.0 279.3 L 109.0 279.3 Z M 108.9 279.3 L 108.9 279.3 Z M 107.5 278.5 L 107.5 278.5 Z M 108.4 316.9 L 108.4 316.9 Z M 108.4 316.8 L 108.4 316.8 Z M 108.5 316.7 L 108.5 316.7 Z M 111.9 292.5 L 111.9 292.5 Z M 86.6 359.5 L 86.6 359.5 Z M 86.8 358.7 L 86.8 358.7 Z M 62.7 320.8 L 62.7 320.8 Z M 63.9 315.9 L 63.9 315.9 Z M 69.4 311.8 L 69.4 311.8 Z M 69.5 311.7 L 69.5 311.7 Z M 69.4 311.7 L 69.4 311.7 Z M 69.4 311.7 L 69.4 311.7 Z M 68.4 306.7 L 68.4 306.7 Z M 66.8 313.4 L 66.8 313.4 Z M 65.9 300.2 L 65.9 300.2 Z M 62.3 351.3 L 62.3 351.3 Z M 64.1 350.9 L 64.1 350.9 Z M 63.7 351.1 L 61.8 351.5 L 63.1 351.1 L 63.7 351.1 Z M 64.2 350.7 L 64.2 350.7 Z M 81.5 363.9 L 81.5 363.9 Z M 82.3 363.3 L 82.3 363.3 Z M 66.7 344.5 L 66.7 344.5 Z M 105.9 345.5 L 105.9 345.5 Z M 65.3 349.1 L 65.3 349.1 Z M 65.2 349.0 L 65.2 349.0 Z M 67.0 364.7 L 67.0 364.7 Z M 68.3 361.7 L 68.3 361.7 Z M 68.3 361.4 L 68.3 361.4 Z M 68.7 355.3 L 68.7 355.3 Z M 67.9 354.3 L 67.9 354.3 Z M 80.2 364.0 L 80.2 364.0 Z M 80.3 364.0 L 80.3 364.0 Z M 79.9 363.6 L 79.9 363.6 Z M 78.3 362.5 L 78.3 362.5 Z M 76.8 362.6 L 76.8 362.6 Z M 106.9 336.2 L 106.9 336.2 Z M 106.9 336.2 L 106.9 336.2 Z M 103.0 355.3 L 103.0 355.3 Z M 103.1 355.3 L 103.1 355.3 Z M 103.1 355.2 L 103.1 355.2 Z M 103.0 355.2 L 103.0 355.2 Z M 102.9 355.0 L 102.9 355.0 Z M 105.2 352.6 L 105.2 352.6 Z M 105.1 352.5 L 105.1 352.5 Z M 105.2 352.4 L 105.2 352.4 Z M 105.2 352.3 L 105.2 352.3 Z" />
+        <text class="region-label" x="85.8" y="311.5">Sardegna</text>
+
+            </svg>
+
+      <div class="map-legend">
+        <div class="legend-item">
+          <div class="legend-swatch" style="background: var(--parchment);"></div>
+          Not yet studied
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch" style="background: #d4a96a;"></div>
+          Partially filled
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch" style="background: var(--terracotta);"></div>
+          Complete
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-section">
+    <!-- Empty state -->
+    <div class="panel-empty" id="panel-empty">
+      <div class="big-icon">🗺️</div>
+      <p>Select a region on the map to view or add its cuisine notes.</p>
+
+      <div class="data-actions">
+        <button class="data-btn export-btn" onclick="exportData()">⬇ Export my data</button>
+        <label class="data-btn import-btn">⬆ Import data<input type="file" accept=".json" onchange="importData(event)" style="display:none"></label>
+      </div>
+
+      <div class="region-index" style="width:100%; margin-top: 1.5rem;">
+        <div class="region-index-title">All Regions</div>
+        <div class="region-list" id="region-list"></div>
+      </div>
+    </div>
+
+    <!-- Region detail panel -->
+    <div class="region-panel" id="region-panel">
+      <div class="panel-header">
+        <button class="back-btn" onclick="goBack()">← All Regions</button>
+        <div class="panel-region-name" id="panel-name">Region Name</div>
+        <div class="panel-status empty" id="panel-status">Not yet studied</div>
+      </div>
+
+      <div id="view-mode">
+        <div class="category-block">
+          <div class="category-header">
+            <span class="category-icon">🍽️</span>
+            <span class="category-title">Signature Foods</span>
+          </div>
+          <div class="category-content" id="view-food">—</div>
+        </div>
+        <div class="category-block">
+          <div class="category-header">
+            <span class="category-icon">🍝</span>
+            <span class="category-title">Pasta</span>
+          </div>
+          <div class="category-content" id="view-pasta">—</div>
+        </div>
+        <div class="category-block">
+          <div class="category-header">
+            <span class="category-icon">🍷</span>
+            <span class="category-title">Wine</span>
+          </div>
+          <div class="category-content" id="view-wine">—</div>
+        </div>
+        <div class="category-block">
+          <div class="category-header">
+            <span class="category-icon">🧀</span>
+            <span class="category-title">Cheese</span>
+          </div>
+          <div class="category-content" id="view-cheese">—</div>
+        </div>
+        <div class="category-block">
+          <div class="category-header">
+            <span class="category-icon">🍮</span>
+            <span class="category-title">Sweets & Desserts</span>
+          </div>
+          <div class="category-content" id="view-desserts">—</div>
+        </div>
+        <div class="category-block">
+          <div class="category-header">
+            <span class="category-icon">⭐</span>
+            <span class="category-title">Notable Dishes & Products</span>
+          </div>
+          <div class="category-content" id="view-notable">—</div>
+        </div>
+        <div class="category-block">
+          <div class="category-header">
+            <span class="category-icon">📝</span>
+            <span class="category-title">Notes</span>
+          </div>
+          <div class="category-content" id="view-notes">—</div>
+        </div>
+        <button class="edit-btn" id="open-edit-btn" onclick="openEdit()">✎ &nbsp; Add / Edit Entries</button>
+      </div>
+
+      <div class="edit-form" id="edit-form">
+        <div class="field-group">
+          <label>🍽️ Signature Foods</label>
+          <textarea id="edit-food" placeholder="e.g. Bistecca alla Fiorentina, Ribollita, Pappardelle al cinghiale…"></textarea>
+        </div>
+        <div class="field-group">
+          <label>🍝 Pasta</label>
+          <textarea id="edit-pasta" placeholder="e.g. Tagliatelle al ragù, Tortellini in brodo…"></textarea>
+        </div>
+        <div class="field-group">
+          <label>🍷 Wine</label>
+          <textarea id="edit-wine" placeholder="e.g. Chianti Classico, Brunello di Montalcino, Vernaccia di San Gimignano…"></textarea>
+        </div>
+        <div class="field-group">
+          <label>🧀 Cheese</label>
+          <textarea id="edit-cheese" placeholder="e.g. Pecorino Toscano, Marzolino…"></textarea>
+        </div>
+        <div class="field-group">
+          <label>🍮 Sweets & Desserts</label>
+          <textarea id="edit-desserts" placeholder="e.g. Cannoli, Cassata, Panna cotta…"></textarea>
+        </div>
+        <div class="field-group">
+          <label>⭐ Notable Dishes & Products</label>
+          <textarea id="edit-notable" placeholder="e.g. Prosciutto di Parma DOP, Parmigiano-Reggiano, Aceto Balsamico…"></textarea>
+        </div>
+        <div class="field-group">
+          <label>📝 Extra Notes</label>
+          <textarea id="edit-notes" placeholder="Techniques, ingredients, flavor profiles, exam tips…"></textarea>
+        </div>
+        <div class="form-actions">
+          <button class="btn-cancel" onclick="cancelEdit()">Cancel</button>
+          <button class="btn-save" onclick="saveRegion()">Save ✓</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const REGIONS = [
+  { id: 'reg-valle-d-aosta', name: "Valle d'Aosta", italian: "Valle d'Aosta" },
+  { id: 'reg-piemonte', name: 'Piemonte', italian: 'Piedmont' },
+  { id: 'reg-liguria', name: 'Liguria', italian: 'Italian Riviera' },
+  { id: 'reg-lombardia', name: 'Lombardia', italian: 'Lombardy' },
+  { id: 'reg-trentino', name: 'Trentino-Alto Adige', italian: 'Südtirol / Trentino' },
+  { id: 'reg-veneto', name: 'Veneto', italian: 'La Serenissima' },
+  { id: 'reg-friuli', name: 'Friuli-Venezia Giulia', italian: 'Friuli-VG' },
+  { id: 'reg-emilia-romagna', name: 'Emilia-Romagna', italian: 'The Food Valley' },
+  { id: 'reg-toscana', name: 'Toscana', italian: 'Tuscany' },
+  { id: 'reg-umbria', name: 'Umbria', italian: 'The Green Heart' },
+  { id: 'reg-marche', name: 'Marche', italian: 'Le Marche' },
+  { id: 'reg-lazio', name: 'Lazio', italian: 'The Eternal City\'s Region' },
+  { id: 'reg-abruzzo', name: 'Abruzzo', italian: 'Abruzzo' },
+  { id: 'reg-molise', name: 'Molise', italian: 'Molise' },
+  { id: 'reg-campania', name: 'Campania', italian: 'Land of Pizza & Pasta' },
+  { id: 'reg-puglia', name: 'Puglia', italian: 'The Heel of the Boot' },
+  { id: 'reg-basilicata', name: 'Basilicata', italian: 'Lucania' },
+  { id: 'reg-calabria', name: 'Calabria', italian: 'The Toe of the Boot' },
+  { id: 'reg-sicilia', name: 'Sicilia', italian: 'Sicily' },
+  { id: 'reg-sardegna', name: 'Sardegna', italian: 'Sardinia' },
+];
+
+// Load data from localStorage
+let data = JSON.parse(localStorage.getItem('italy-cuisine-atlas') || '{}');
+let activeRegion = null;
+
+function save() {
+  localStorage.setItem('italy-cuisine-atlas', JSON.stringify(data));
+}
+
+function getStatus(id) {
+  const d = data[id];
+  if (!d) return 'empty';
+  const filled = [d.food, d.pasta, d.wine, d.cheese, d.desserts, d.notable].filter(v => v && v.trim()).length;
+  if (filled === 0) return 'empty';
+  if (filled === 6) return 'complete';
+  return 'partial';
+}
+
+function updateMap() {
+  REGIONS.forEach(r => {
+    const el = document.getElementById(r.id);
+    if (!el) return;
+    const status = getStatus(r.id);
+    el.classList.remove('filled', 'has-all');
+    if (status === 'partial') el.classList.add('filled');
+    if (status === 'complete') { el.classList.add('filled'); el.classList.add('has-all'); }
+  });
+
+  const complete = REGIONS.filter(r => getStatus(r.id) === 'complete').length;
+  const partial = REGIONS.filter(r => getStatus(r.id) === 'partial').length;
+  const total = complete + partial;
+  document.getElementById('progress-count').textContent = `${complete} / 20 complete`;
+  document.getElementById('progress-fill').style.width = `${(complete / 20) * 100}%`;
+  updateList();
+}
+
+function updateList() {
+  const list = document.getElementById('region-list');
+  list.innerHTML = '';
+  REGIONS.forEach(r => {
+    const status = getStatus(r.id);
+    const chip = document.createElement('div');
+    chip.className = `region-chip ${status}`;
+    chip.innerHTML = `<span class="dot"></span>${r.name}`;
+    chip.onclick = () => selectRegion(r.id);
+    list.appendChild(chip);
+  });
+}
+
+function selectRegion(id) {
+  // Deactivate previous
+  if (activeRegion) {
+    const prev = document.getElementById(activeRegion);
+    if (prev) prev.classList.remove('active');
+  }
+
+  activeRegion = id;
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+
+  const region = REGIONS.find(r => r.id === id);
+  const d = data[id] || {};
+  const status = getStatus(id);
+
+  document.getElementById('panel-empty').style.display = 'none';
+  const panel = document.getElementById('region-panel');
+  panel.classList.add('visible');
+
+  document.getElementById('panel-name').innerHTML =
+    `${region.name}<em>${region.italian}</em>`;
+
+  const statusEl = document.getElementById('panel-status');
+  statusEl.className = `panel-status ${status}`;
+  statusEl.textContent = status === 'empty' ? '○ Not yet studied'
+    : status === 'partial' ? '◑ Partially documented'
+    : '● Complete';
+
+  const setContent = (id, val) => {
+    const el = document.getElementById(id);
+    if (val && val.trim()) {
+      el.textContent = val;
+      el.classList.add('has-content');
+    } else {
+      el.textContent = '—';
+      el.classList.remove('has-content');
+    }
+  };
+
+  setContent('view-food', d.food);
+  setContent('view-pasta', d.pasta);
+  setContent('view-wine', d.wine);
+  setContent('view-cheese', d.cheese);
+  setContent('view-desserts', d.desserts);
+  setContent('view-notable', d.notable);
+  setContent('view-notes', d.notes);
+
+  // Close edit if open
+  document.getElementById('edit-form').classList.remove('visible');
+  document.getElementById('view-mode').style.display = 'block';
+}
+
+function openEdit() {
+  const d = data[activeRegion] || {};
+  document.getElementById('edit-food').value = d.food || '';
+  document.getElementById('edit-pasta').value = d.pasta || '';
+  document.getElementById('edit-wine').value = d.wine || '';
+  document.getElementById('edit-cheese').value = d.cheese || '';
+  document.getElementById('edit-desserts').value = d.desserts || '';
+  document.getElementById('edit-notable').value = d.notable || '';
+  document.getElementById('edit-notes').value = d.notes || '';
+  document.getElementById('edit-form').classList.add('visible');
+  document.getElementById('view-mode').style.display = 'none';
+}
+
+function cancelEdit() {
+  document.getElementById('edit-form').classList.remove('visible');
+  document.getElementById('view-mode').style.display = 'block';
+}
+
+function saveRegion() {
+  if (!activeRegion) return;
+  data[activeRegion] = {
+    food: document.getElementById('edit-food').value.trim(),
+    pasta: document.getElementById('edit-pasta').value.trim(),
+    wine: document.getElementById('edit-wine').value.trim(),
+    cheese: document.getElementById('edit-cheese').value.trim(),
+    desserts: document.getElementById('edit-desserts').value.trim(),
+    notable: document.getElementById('edit-notable').value.trim(),
+    notes: document.getElementById('edit-notes').value.trim(),
+  };
+  save();
+  selectRegion(activeRegion);
+  updateMap();
+}
+
+// Tooltip
+const tooltip = document.getElementById('tooltip');
+REGIONS.forEach(r => {
+  const el = document.getElementById(r.id);
+  if (!el) return;
+  el.addEventListener('mouseenter', e => {
+    tooltip.textContent = r.name;
+    tooltip.classList.add('visible');
+  });
+  el.addEventListener('mousemove', e => {
+    tooltip.style.left = (e.clientX + 14) + 'px';
+    tooltip.style.top = (e.clientY - 10) + 'px';
+  });
+  el.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
+  el.addEventListener('click', () => selectRegion(r.id));
+});
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'italy-cuisine-atlas-backup.json';
+  a.click();
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      data = imported;
+      save();
+      updateMap();
+      alert('Data imported successfully!');
+    } catch {
+      alert('Invalid file — please use a backup exported from this app.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function goBack() {
+  if (activeRegion) {
+    const prev = document.getElementById(activeRegion);
+    if (prev) prev.classList.remove('active');
+    activeRegion = null;
+  }
+  document.getElementById('region-panel').classList.remove('visible');
+  document.getElementById('panel-empty').style.display = '';
+  document.getElementById('edit-form').classList.remove('visible');
+  document.getElementById('view-mode').style.display = 'block';
+}
+
+// Init
+updateMap();
+</script>
+</body>
+</html>
