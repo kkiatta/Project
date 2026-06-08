@@ -376,6 +376,15 @@
     border-left-color: var(--terracotta);
   }
 
+  #view-mode .category-content {
+    cursor: pointer;
+  }
+
+  #view-mode .category-content:hover {
+    border-left-color: var(--gold);
+    background: #ede0c4;
+  }
+
   /* Edit mode */
   .edit-btn {
     display: block;
@@ -1113,6 +1122,11 @@ function goBack() {
   document.getElementById('edit-form').classList.remove('visible');
   document.getElementById('view-mode').style.display = 'block';
 }
+
+// Double-click any view field to jump straight into edit mode
+document.querySelectorAll('#view-mode .category-content').forEach(el => {
+  el.addEventListener('dblclick', openEdit);
+});
 
 // Init
 updateMap();
