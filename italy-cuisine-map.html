@@ -597,6 +597,25 @@
     .map-section { padding-right: 0; padding-bottom: 1.5rem; }
     .panel-section { border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 1.5rem; }
   }
+
+  .autosave-toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background: var(--olive);
+    color: var(--cream);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.1rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1001;
+  }
+
+  .autosave-toast.show { opacity: 1; }
 </style>
 </head>
 <body>
@@ -750,6 +769,13 @@
         </div>
         <div class="category-block">
           <div class="category-header">
+            <span class="category-icon">🥩</span>
+            <span class="category-title">Meat & Meat Dishes</span>
+          </div>
+          <div class="category-content" id="view-meat">—</div>
+        </div>
+        <div class="category-block">
+          <div class="category-header">
             <span class="category-icon">🍮</span>
             <span class="category-title">Sweets & Desserts</span>
           </div>
@@ -794,6 +820,10 @@
           <textarea id="edit-vegetables" placeholder="e.g. Porcini mushrooms, Carciofi romani, Radicchio di Treviso…"></textarea>
         </div>
         <div class="field-group">
+          <label>🥩 Meat & Meat Dishes</label>
+          <textarea id="edit-meat" placeholder="e.g. Bistecca alla Fiorentina, Porchetta, Agnello alla cacciatora…"></textarea>
+        </div>
+        <div class="field-group">
           <label>🍮 Sweets & Desserts</label>
           <textarea id="edit-desserts" placeholder="e.g. Cannoli, Cassata, Panna cotta…"></textarea>
         </div>
@@ -815,6 +845,7 @@
 </div>
 
 <div class="tooltip" id="tooltip"></div>
+<div class="autosave-toast" id="autosave-toast">✓ Auto-saved</div>
 
 <script>
 const REGIONS = [
@@ -851,9 +882,9 @@ function save() {
 function getStatus(id) {
   const d = data[id];
   if (!d) return 'empty';
-  const filled = [d.food, d.pasta, d.wine, d.cheese, d.vegetables, d.desserts, d.notable].filter(v => v && v.trim()).length;
+  const filled = [d.food, d.pasta, d.wine, d.cheese, d.vegetables, d.meat, d.desserts, d.notable].filter(v => v && v.trim()).length;
   if (filled === 0) return 'empty';
-  if (filled === 7) return 'complete';
+  if (filled === 8) return 'complete';
   return 'partial';
 }
 
@@ -889,6 +920,11 @@ function updateList() {
 }
 
 function selectRegion(id) {
+  // Auto-save unsaved edits before switching region
+  if (activeRegion && document.getElementById('edit-form').classList.contains('visible')) {
+    autoSave();
+  }
+
   // Deactivate previous
   if (activeRegion) {
     const prev = document.getElementById(activeRegion);
@@ -932,6 +968,7 @@ function selectRegion(id) {
   setContent('view-wine', d.wine);
   setContent('view-cheese', d.cheese);
   setContent('view-vegetables', d.vegetables);
+  setContent('view-meat', d.meat);
   setContent('view-desserts', d.desserts);
   setContent('view-notable', d.notable);
   setContent('view-notes', d.notes);
@@ -948,6 +985,7 @@ function openEdit() {
   document.getElementById('edit-wine').value = d.wine || '';
   document.getElementById('edit-cheese').value = d.cheese || '';
   document.getElementById('edit-vegetables').value = d.vegetables || '';
+  document.getElementById('edit-meat').value = d.meat || '';
   document.getElementById('edit-desserts').value = d.desserts || '';
   document.getElementById('edit-notable').value = d.notable || '';
   document.getElementById('edit-notes').value = d.notes || '';
@@ -960,6 +998,31 @@ function cancelEdit() {
   document.getElementById('view-mode').style.display = 'block';
 }
 
+function autoSave() {
+  if (!activeRegion) return;
+  data[activeRegion] = {
+    food: document.getElementById('edit-food').value.trim(),
+    pasta: document.getElementById('edit-pasta').value.trim(),
+    wine: document.getElementById('edit-wine').value.trim(),
+    cheese: document.getElementById('edit-cheese').value.trim(),
+    vegetables: document.getElementById('edit-vegetables').value.trim(),
+    meat: document.getElementById('edit-meat').value.trim(),
+    desserts: document.getElementById('edit-desserts').value.trim(),
+    notable: document.getElementById('edit-notable').value.trim(),
+    notes: document.getElementById('edit-notes').value.trim(),
+  };
+  save();
+  updateMap();
+  showAutoSaveToast();
+}
+
+function showAutoSaveToast() {
+  const toast = document.getElementById('autosave-toast');
+  toast.classList.add('show');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
 function saveRegion() {
   if (!activeRegion) return;
   data[activeRegion] = {
@@ -968,6 +1031,7 @@ function saveRegion() {
     wine: document.getElementById('edit-wine').value.trim(),
     cheese: document.getElementById('edit-cheese').value.trim(),
     vegetables: document.getElementById('edit-vegetables').value.trim(),
+    meat: document.getElementById('edit-meat').value.trim(),
     desserts: document.getElementById('edit-desserts').value.trim(),
     notable: document.getElementById('edit-notable').value.trim(),
     notes: document.getElementById('edit-notes').value.trim(),
@@ -1021,6 +1085,9 @@ function importData(event) {
 }
 
 function goBack() {
+  if (activeRegion && document.getElementById('edit-form').classList.contains('visible')) {
+    autoSave();
+  }
   if (activeRegion) {
     const prev = document.getElementById(activeRegion);
     if (prev) prev.classList.remove('active');
