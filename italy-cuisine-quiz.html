@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Italia — Cuisine Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #f5f0e8; --parchment: #ede5d0; --ink: #1a1208;
+  --terracotta: #c4603a; --olive: #6b7c45; --wine: #6b2737;
+  --gold: #c9972a; --gold-light: #e8b84b; --border: #b8a882;
+  --shadow: rgba(26,18,8,0.15);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--cream); color:var(--ink); font-family:'Cormorant Garamond',serif; min-height:100vh; }
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:1000; opacity:0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+header { text-align:center; padding:2.5rem 2rem 1.5rem; border-bottom:1px solid var(--border); }
+header::after { content:'✦ ✦ ✦'; display:block; font-size:0.7rem; color:var(--gold); letter-spacing:0.5rem; margin-top:0.5rem; }
+.title-eyebrow { font-family:'Cormorant Garamond',serif; font-size:0.75rem; letter-spacing:0.35rem; text-transform:uppercase; color:var(--terracotta); margin-bottom:0.4rem; }
+h1 { font-family:'Playfair Display',serif; font-size:clamp(2rem,5vw,3.2rem); font-weight:400; line-height:1.1; }
+h1 em { font-style:italic; color:var(--terracotta); }
+.subtitle { font-family:'IM Fell English',serif; font-style:italic; font-size:1rem; color:#6b5c3e; margin-top:0.4rem; }
+
+.container { max-width:660px; margin:0 auto; padding:2.5rem 1.5rem; }
+.back-link { display:inline-flex; align-items:center; gap:0.3rem; font-size:0.75rem; letter-spacing:0.18rem; text-transform:uppercase; color:#9a8a6e; text-decoration:none; margin-bottom:1.5rem; transition:color 0.2s; }
+.back-link:hover { color:var(--terracotta); }
+
+/* ── START SCREEN ── */
+.setup-card { background:var(--parchment); border:1px solid var(--border); border-radius:6px; padding:2rem; }
+.setup-section { margin-bottom:1.5rem; }
+.setup-label { font-size:0.7rem; letter-spacing:0.3rem; text-transform:uppercase; color:var(--terracotta); font-weight:600; margin-bottom:0.75rem; }
+
+.category-filter { display:grid; grid-template-columns:1fr 1fr; gap:0.4rem; margin-bottom:0.5rem; }
+.filter-item { display:flex; align-items:center; gap:0.5rem; padding:0.45rem 0.7rem; border:1px solid var(--border); border-radius:3px; cursor:pointer; background:white; transition:all 0.15s; user-select:none; }
+.filter-item.checked { border-color:var(--terracotta); background:rgba(196,96,58,0.06); }
+.filter-item input { accent-color:var(--terracotta); cursor:pointer; flex-shrink:0; }
+.filter-item .cat-name { flex:1; font-size:0.88rem; }
+.cat-count { font-size:0.7rem; color:#9a8a6e; background:var(--parchment); padding:0.1rem 0.4rem; border-radius:10px; flex-shrink:0; }
+
+.filter-actions { display:flex; gap:0.8rem; }
+.text-btn { background:none; border:none; cursor:pointer; font-family:'Cormorant Garamond',serif; font-size:0.78rem; letter-spacing:0.1rem; text-decoration:underline; color:#9a8a6e; transition:color 0.2s; padding:0; }
+.text-btn:hover { color:var(--terracotta); }
+
+.type-selector { display:flex; gap:0.4rem; }
+.type-btn { flex:1; padding:0.55rem 0.4rem; border:1px solid var(--border); background:white; border-radius:3px; cursor:pointer; font-family:'Cormorant Garamond',serif; font-size:0.78rem; letter-spacing:0.1rem; text-transform:uppercase; color:#8a7558; transition:all 0.2s; }
+.type-btn.selected { border-color:var(--terracotta); background:rgba(196,96,58,0.08); color:var(--terracotta); font-weight:600; }
+
+.count-display { text-align:center; padding:0.7rem; font-family:'IM Fell English',serif; font-style:italic; color:#9a8a6e; font-size:0.95rem; border:1px dashed var(--border); border-radius:3px; margin-bottom:1.2rem; }
+
+.btn-primary { display:block; width:100%; padding:0.75rem; background:var(--terracotta); color:var(--cream); border:none; cursor:pointer; font-family:'Cormorant Garamond',serif; font-size:0.85rem; letter-spacing:0.3rem; text-transform:uppercase; border-radius:3px; transition:background 0.2s; text-align:center; text-decoration:none; }
+.btn-primary:hover:not(:disabled) { background:var(--wine); }
+.btn-primary:disabled { opacity:0.45; cursor:not-allowed; }
+
+/* ── QUIZ SCREEN ── */
+.quiz-header { margin-bottom:1.5rem; }
+.progress-info { display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; letter-spacing:0.12rem; text-transform:uppercase; color:#8a7558; margin-bottom:0.35rem; }
+.score-tally { letter-spacing:0; font-size:0.8rem; }
+.progress-bar { height:5px; background:var(--parchment); border-radius:3px; border:1px solid var(--border); overflow:hidden; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--terracotta),var(--gold)); border-radius:3px; transition:width 0.4s ease; }
+
+.question-card { background:var(--parchment); border:1px solid var(--border); border-radius:6px; padding:2rem; margin-bottom:1.2rem; animation:fadeSlide 0.25s ease; }
+@keyframes fadeSlide { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+.q-category { font-size:0.7rem; letter-spacing:0.3rem; text-transform:uppercase; color:var(--terracotta); margin-bottom:1rem; }
+.q-region { font-family:'Playfair Display',serif; font-size:2rem; font-weight:400; text-align:center; line-height:1.1; }
+.q-region em { display:block; font-family:'IM Fell English',serif; font-size:0.85rem; font-style:italic; color:var(--terracotta); margin-top:0.2rem; }
+.q-prompt { font-family:'IM Fell English',serif; font-style:italic; font-size:1.05rem; color:#6b5c3e; text-align:center; margin-top:1rem; }
+.q-prompt-mc { font-family:'IM Fell English',serif; font-style:italic; font-size:1.05rem; color:#6b5c3e; margin-bottom:0.8rem; }
+
+.answer-box { background:white; border:1px solid var(--border); border-left:3px solid var(--terracotta); border-radius:0 4px 4px 0; padding:0.9rem 1rem; font-size:1rem; line-height:1.7; white-space:pre-wrap; animation:fadeIn 0.3s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+
+.btn-reveal { display:block; width:100%; padding:0.7rem; background:var(--parchment); border:1px solid var(--border); border-radius:3px; cursor:pointer; font-family:'Cormorant Garamond',serif; font-size:0.82rem; letter-spacing:0.25rem; text-transform:uppercase; color:#8a7558; transition:all 0.2s; }
+.btn-reveal:hover { border-color:var(--gold); color:var(--terracotta); }
+
+.grade-buttons { display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-top:0.8rem; }
+.btn-missed { padding:0.65rem; background:transparent; border:1px solid var(--terracotta); cursor:pointer; font-family:'Cormorant Garamond',serif; font-size:0.82rem; letter-spacing:0.15rem; text-transform:uppercase; color:var(--terracotta); border-radius:3px; transition:all 0.2s; }
+.btn-missed:hover { background:rgba(196,96,58,0.1); }
+.btn-got { padding:0.65rem; background:var(--olive); border:none; cursor:pointer; font-family:'Cormorant Garamond',serif; font-size:0.82rem; letter-spacing:0.15rem; text-transform:uppercase; color:var(--cream); border-radius:3px; transition:background 0.2s; }
+.btn-got:hover { background:#4a5c2e; }
+
+.mc-choices { display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; }
+.choice-btn { padding:0.7rem 0.5rem; background:white; border:1px solid var(--border); border-radius:3px; cursor:pointer; font-family:'Cormorant Garamond',serif; font-size:0.92rem; color:var(--ink); transition:all 0.2s; }
+.choice-btn:hover:not(:disabled) { border-color:var(--gold-light); background:rgba(201,151,42,0.08); }
+.choice-btn.correct { background:rgba(107,124,69,0.12); border-color:var(--olive); color:var(--olive); font-weight:600; }
+.choice-btn.wrong { background:rgba(196,96,58,0.08); border-color:var(--terracotta); color:var(--terracotta); opacity:0.7; }
+.choice-btn:disabled { cursor:default; }
+
+.btn-next { display:block; width:100%; padding:0.65rem; background:var(--terracotta); border:none; cursor:pointer; font-family:'Cormorant Garamond',serif; font-size:0.82rem; letter-spacing:0.25rem; text-transform:uppercase; color:var(--cream); border-radius:3px; transition:background 0.2s; margin-top:1rem; }
+.btn-next:hover { background:var(--wine); }
+
+/* ── RESULTS SCREEN ── */
+.results-card { background:var(--parchment); border:1px solid var(--border); border-radius:6px; padding:2.5rem 2rem; text-align:center; }
+.results-eyebrow { font-size:0.7rem; letter-spacing:0.35rem; text-transform:uppercase; color:var(--terracotta); margin-bottom:0.8rem; }
+.results-score { font-family:'Playfair Display',serif; font-size:3.5rem; font-weight:400; color:var(--ink); line-height:1; }
+.results-pct { font-family:'IM Fell English',serif; font-style:italic; font-size:1.4rem; color:var(--terracotta); margin:0.3rem 0 0.4rem; }
+.results-verdict { font-family:'IM Fell English',serif; font-style:italic; font-size:1rem; color:#6b5c3e; margin-bottom:1.8rem; }
+
+.breakdown { text-align:left; margin-bottom:1.5rem; }
+.breakdown-title { font-size:0.7rem; letter-spacing:0.3rem; text-transform:uppercase; color:var(--terracotta); margin-bottom:0.6rem; }
+.breakdown table { width:100%; border-collapse:collapse; font-size:0.92rem; }
+.breakdown th { font-size:0.67rem; letter-spacing:0.15rem; text-transform:uppercase; color:#9a8a6e; padding:0.3rem 0.5rem; border-bottom:1px solid var(--border); text-align:left; font-weight:400; }
+.breakdown th:not(:first-child) { text-align:center; }
+.breakdown td { padding:0.4rem 0.5rem; border-bottom:1px solid rgba(184,168,130,0.35); }
+.bd-c { color:var(--olive); text-align:center; }
+.bd-i { color:var(--terracotta); text-align:center; }
+.bd-p { text-align:right; font-weight:600; }
+
+.results-actions { display:flex; flex-direction:column; gap:0.5rem; }
+.btn-secondary { padding:0.65rem; background:transparent; border:1px solid var(--border); cursor:pointer; font-family:'Cormorant Garamond',serif; font-size:0.82rem; letter-spacing:0.2rem; text-transform:uppercase; color:#8a7558; border-radius:3px; transition:all 0.2s; }
+.btn-secondary:hover { border-color:var(--ink); color:var(--ink); }
+.btn-atlas { display:block; padding:0.65rem; background:transparent; border:1px solid var(--border); font-family:'Cormorant Garamond',serif; font-size:0.82rem; letter-spacing:0.2rem; text-transform:uppercase; color:#8a7558; text-decoration:none; border-radius:3px; text-align:center; transition:all 0.2s; }
+.btn-atlas:hover { border-color:var(--terracotta); color:var(--terracotta); }
+
+/* ── EMPTY STATE ── */
+.empty-state { text-align:center; padding:4rem 1.5rem; }
+.empty-icon { font-size:3rem; opacity:0.4; margin-bottom:1rem; }
+.empty-msg { font-family:'IM Fell English',serif; font-style:italic; font-size:1.05rem; color:#9a8a6e; max-width:300px; margin:0 auto 2rem; line-height:1.6; }
+
+@media (max-width:580px) {
+  .category-filter { grid-template-columns:1fr; }
+  .mc-choices { grid-template-columns:1fr; }
+  .grade-buttons { grid-template-columns:1fr; }
+  .type-selector { flex-direction:column; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-eyebrow">Culinary Arts — Italian Cuisine</div>
+  <h1><em>Italia</em> — Cuisine Quiz</h1>
+  <p class="subtitle">Test your knowledge of the twenty regions</p>
+</header>
+
+<!-- EMPTY STATE -->
+<div id="screen-empty" style="display:none">
+  <div class="container">
+    <div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <p class="empty-msg">No cuisine data found yet. Head back to the atlas and fill in some regions first, then come back to quiz yourself!</p>
+      <a href="italy-cuisine-map.html" class="btn-primary" style="max-width:260px; margin:0 auto; display:block;">← Back to Atlas</a>
+    </div>
+  </div>
+</div>
+
+<!-- START SCREEN -->
+<div id="screen-start" style="display:none">
+  <div class="container">
+    <a href="italy-cuisine-map.html" class="back-link">← Back to Atlas</a>
+    <div class="setup-card">
+
+      <div class="setup-section">
+        <div class="setup-label">Categories to study</div>
+        <div class="category-filter" id="category-filter"></div>
+        <div class="filter-actions">
+          <button class="text-btn" onclick="selectAllCats(true)">Select all</button>
+          <button class="text-btn" onclick="selectAllCats(false)">Deselect all</button>
+        </div>
+      </div>
+
+      <div class="setup-section">
+        <div class="setup-label">Question format</div>
+        <div class="type-selector">
+          <button class="type-btn selected" data-type="both" onclick="setType(this)">Both</button>
+          <button class="type-btn" data-type="recall" onclick="setType(this)">Flashcard only</button>
+          <button class="type-btn" data-type="identify" onclick="setType(this)">Multiple choice only</button>
+        </div>
+      </div>
+
+      <div class="count-display" id="count-display">— questions ready</div>
+      <button class="btn-primary" id="start-btn" onclick="startQuiz()">Begin Quiz →</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ SCREEN -->
+<div id="screen-quiz" style="display:none">
+  <div class="container">
+    <div class="quiz-header">
+      <div class="progress-info">
+        <span id="q-progress">Question 1 of 10</span>
+        <span class="score-tally" id="q-score">✓ 0 &nbsp; ✗ 0</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="q-fill" style="width:0%"></div>
+      </div>
+    </div>
+    <div id="q-card" class="question-card"></div>
+    <div id="q-actions"></div>
+  </div>
+</div>
+
+<!-- RESULTS SCREEN -->
+<div id="screen-results" style="display:none">
+  <div class="container">
+    <div class="results-card">
+      <div class="results-eyebrow">Quiz Complete</div>
+      <div class="results-score" id="r-score">–</div>
+      <div class="results-pct" id="r-pct">–%</div>
+      <div class="results-verdict" id="r-verdict"></div>
+      <div class="breakdown">
+        <div class="breakdown-title">Category Breakdown</div>
+        <div id="r-breakdown"></div>
+      </div>
+      <div class="results-actions">
+        <button class="btn-primary" onclick="startQuiz()">↺ &nbsp;Retake Quiz</button>
+        <button class="btn-secondary" onclick="show('screen-start')">Change Settings</button>
+        <a href="italy-cuisine-map.html" class="btn-atlas">← Back to Atlas</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const REGIONS = [
+  { id:'reg-valle-d-aosta',  name:"Valle d'Aosta",         italian:"Valle d'Aosta" },
+  { id:'reg-piemonte',       name:'Piemonte',               italian:'Piedmont' },
+  { id:'reg-liguria',        name:'Liguria',                italian:'Italian Riviera' },
+  { id:'reg-lombardia',      name:'Lombardia',              italian:'Lombardy' },
+  { id:'reg-trentino',       name:'Trentino-Alto Adige',    italian:'Südtirol / Trentino' },
+  { id:'reg-veneto',         name:'Veneto',                 italian:'La Serenissima' },
+  { id:'reg-friuli',         name:'Friuli-Venezia Giulia',  italian:'Friuli-VG' },
+  { id:'reg-emilia-romagna', name:'Emilia-Romagna',         italian:'The Food Valley' },
+  { id:'reg-toscana',        name:'Toscana',                italian:'Tuscany' },
+  { id:'reg-umbria',         name:'Umbria',                 italian:'The Green Heart' },
+  { id:'reg-marche',         name:'Marche',                 italian:'Le Marche' },
+  { id:'reg-lazio',          name:'Lazio',                  italian:"The Eternal City's Region" },
+  { id:'reg-abruzzo',        name:'Abruzzo',                italian:'Abruzzo' },
+  { id:'reg-molise',         name:'Molise',                 italian:'Molise' },
+  { id:'reg-campania',       name:'Campania',               italian:'Land of Pizza & Pasta' },
+  { id:'reg-puglia',         name:'Puglia',                 italian:'The Heel of the Boot' },
+  { id:'reg-basilicata',     name:'Basilicata',             italian:'Lucania' },
+  { id:'reg-calabria',       name:'Calabria',               italian:'The Toe of the Boot' },
+  { id:'reg-sicilia',        name:'Sicilia',                italian:'Sicily' },
+  { id:'reg-sardegna',       name:'Sardegna',               italian:'Sardinia' },
+];
+
+const CAT = {
+  food:       { label:'Signature Foods',            icon:'🍽️' },
+  pasta:      { label:'Pasta',                      icon:'🍝' },
+  wine:       { label:'Wine & Spirits',             icon:'🍷' },
+  cheese:     { label:'Cheese',                     icon:'🧀' },
+  vegetables: { label:'Vegetables',                 icon:'🥦' },
+  meat:       { label:'Meat & Meat Dishes',         icon:'🥩' },
+  fish:       { label:'Fish & Fish Dishes',         icon:'🐟' },
+  desserts:   { label:'Sweets & Desserts',          icon:'🍮' },
+  notable:    { label:'Notable Dishes & Products',  icon:'⭐' },
+  notes:      { label:'Notes',                      icon:'📝' },
+};
+
+let atlasData = {};
+let questions = [];
+let qIndex = 0;
+let nCorrect = 0;
+let nWrong = 0;
+let breakdown = {};
+let selectedCats = new Set();
+let qType = 'both';
+let currentQ = null;
+
+function shuffle(a) {
+  const b = [...a];
+  for (let i = b.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [b[i], b[j]] = [b[j], b[i]];
+  }
+  return b;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function show(id) {
+  ['screen-empty','screen-start','screen-quiz','screen-results'].forEach(s =>
+    document.getElementById(s).style.display = 'none'
+  );
+  document.getElementById(id).style.display = 'block';
+}
+
+// ── INIT ──
+function init() {
+  atlasData = JSON.parse(localStorage.getItem('italy-cuisine-atlas') || '{}');
+
+  const hasData = REGIONS.some(r => {
+    const d = atlasData[r.id];
+    return d && Object.keys(CAT).some(k => d[k] && d[k].trim());
+  });
+
+  if (!hasData) { show('screen-empty'); return; }
+
+  Object.keys(CAT).forEach(cat => {
+    if (REGIONS.some(r => atlasData[r.id] && atlasData[r.id][cat] && atlasData[r.id][cat].trim()))
+      selectedCats.add(cat);
+  });
+
+  renderFilter();
+  updateCount();
+  show('screen-start');
+}
+
+// ── SETUP ──
+function renderFilter() {
+  const el = document.getElementById('category-filter');
+  el.innerHTML = '';
+  Object.entries(CAT).forEach(([key, meta]) => {
+    const count = REGIONS.filter(r => atlasData[r.id] && atlasData[r.id][key] && atlasData[r.id][key].trim()).length;
+    if (!count) return;
+    const checked = selectedCats.has(key);
+    const lbl = document.createElement('label');
+    lbl.className = 'filter-item' + (checked ? ' checked' : '');
+    lbl.innerHTML = `
+      <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleCat('${key}',this)">
+      <span class="cat-name">${meta.icon} ${meta.label}</span>
+      <span class="cat-count">${count}</span>`;
+    el.appendChild(lbl);
+  });
+}
+
+function toggleCat(key, el) {
+  if (el.checked) selectedCats.add(key); else selectedCats.delete(key);
+  el.closest('.filter-item').classList.toggle('checked', el.checked);
+  updateCount();
+}
+
+function selectAllCats(val) {
+  Object.keys(CAT).forEach(cat => {
+    const has = REGIONS.some(r => atlasData[r.id] && atlasData[r.id][cat] && atlasData[r.id][cat].trim());
+    if (has) { if (val) selectedCats.add(cat); else selectedCats.delete(cat); }
+  });
+  renderFilter();
+  updateCount();
+}
+
+function setType(btn) {
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  qType = btn.dataset.type;
+  updateCount();
+}
+
+function updateCount() {
+  const n = buildPool(false).length;
+  document.getElementById('count-display').textContent =
+    n ? `${n} question${n !== 1 ? 's' : ''} ready` : 'No questions available with current selection';
+  const btn = document.getElementById('start-btn');
+  btn.disabled = !n;
+}
+
+// ── QUESTION POOL ──
+function buildPool(doShuffle = true) {
+  const pool = [];
+  const catMap = {};
+
+  REGIONS.forEach(region => {
+    const d = atlasData[region.id];
+    if (!d) return;
+    selectedCats.forEach(cat => {
+      if (!d[cat] || !d[cat].trim()) return;
+      const answer = d[cat].trim();
+      if (!catMap[cat]) catMap[cat] = [];
+      catMap[cat].push({ region, answer });
+      if (qType !== 'identify')
+        pool.push({ type:'recall', region, cat, answer });
+    });
+  });
+
+  if (qType !== 'recall') {
+    Object.entries(catMap).forEach(([cat, entries]) => {
+      if (entries.length < 4) return;
+      entries.forEach(entry => {
+        const wrongs = shuffle(entries.filter(e => e.region.id !== entry.region.id))
+          .slice(0, 3).map(e => e.region.name);
+        pool.push({
+          type: 'identify', region: entry.region, cat,
+          answer: entry.answer,
+          choices: shuffle([entry.region.name, ...wrongs]),
+        });
+      });
+    });
+  }
+
+  return doShuffle ? shuffle(pool) : pool;
+}
+
+// ── QUIZ ──
+function startQuiz() {
+  questions = buildPool(true);
+  if (!questions.length) return;
+  qIndex = 0; nCorrect = 0; nWrong = 0; breakdown = {};
+  show('screen-quiz');
+  renderQ();
+}
+
+function renderQ() {
+  currentQ = questions[qIndex];
+  const meta = CAT[currentQ.cat];
+
+  document.getElementById('q-progress').textContent = `Question ${qIndex + 1} of ${questions.length}`;
+  document.getElementById('q-score').innerHTML = `✓ ${nCorrect} &nbsp; ✗ ${nWrong}`;
+  document.getElementById('q-fill').style.width = `${(qIndex / questions.length) * 100}%`;
+
+  if (currentQ.type === 'recall') renderRecall(currentQ, meta);
+  else renderIdentify(currentQ, meta);
+}
+
+function renderRecall(q, meta) {
+  document.getElementById('q-card').innerHTML = `
+    <div class="q-category">${meta.icon}&nbsp; ${meta.label}</div>
+    <div class="q-region">${esc(q.region.name)}<em>${esc(q.region.italian)}</em></div>
+    <div class="q-prompt">What are the ${meta.label.toLowerCase()} of this region?</div>`;
+
+  document.getElementById('q-actions').innerHTML = `
+    <button class="btn-reveal" id="reveal-btn" onclick="revealAnswer()">Reveal Answer</button>
+    <div id="after-reveal" style="display:none">
+      <div class="answer-box" style="margin-top:0.8rem">${esc(q.answer)}</div>
+      <div class="grade-buttons">
+        <button class="btn-missed" onclick="grade(false)">✗ &nbsp;Missed it</button>
+        <button class="btn-got" onclick="grade(true)">✓ &nbsp;Got it</button>
+      </div>
+    </div>`;
+}
+
+function revealAnswer() {
+  document.getElementById('reveal-btn').style.display = 'none';
+  document.getElementById('after-reveal').style.display = 'block';
+}
+
+function renderIdentify(q, meta) {
+  const buttons = q.choices.map(c =>
+    `<button class="choice-btn" data-region="${esc(c)}" onclick="checkChoice(this)">${esc(c)}</button>`
+  ).join('');
+
+  document.getElementById('q-card').innerHTML = `
+    <div class="q-category">${meta.icon}&nbsp; ${meta.label}</div>
+    <div class="q-prompt-mc">Which region's ${meta.label.toLowerCase()} includes the following?</div>
+    <div class="answer-box" style="margin-bottom:1.2rem">${esc(q.answer)}</div>
+    <div class="mc-choices">${buttons}</div>`;
+
+  document.getElementById('q-actions').innerHTML =
+    `<button class="btn-next" id="next-btn" onclick="nextQ()" style="display:none">Next →</button>`;
+}
+
+function checkChoice(btn) {
+  const chosen = btn.dataset.region;
+  document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+  const isRight = chosen === currentQ.region.name;
+  btn.classList.add(isRight ? 'correct' : 'wrong');
+  if (!isRight) {
+    document.querySelectorAll('.choice-btn').forEach(b => {
+      if (b.dataset.region === currentQ.region.name) b.classList.add('correct');
+    });
+  }
+  record(isRight);
+  document.getElementById('next-btn').style.display = 'block';
+}
+
+function grade(isRight) { record(isRight); nextQ(); }
+
+function record(isRight) {
+  const cat = currentQ.cat;
+  if (!breakdown[cat]) breakdown[cat] = { c:0, w:0 };
+  if (isRight) { nCorrect++; breakdown[cat].c++; }
+  else { nWrong++; breakdown[cat].w++; }
+}
+
+function nextQ() {
+  qIndex++;
+  if (qIndex >= questions.length) showResults();
+  else renderQ();
+}
+
+// ── RESULTS ──
+function showResults() {
+  const total = questions.length;
+  const pct = Math.round((nCorrect / total) * 100);
+
+  document.getElementById('r-score').textContent = `${nCorrect} / ${total}`;
+  document.getElementById('r-pct').textContent = `${pct}%`;
+
+  const verdicts = ['Keep studying!','Getting there!','Not bad!','Good effort!','Well done!','Perfetto! 🇮🇹'];
+  document.getElementById('r-verdict').textContent = verdicts[Math.min(Math.floor(pct / 20), 5)];
+
+  const rows = Object.entries(breakdown).map(([cat, b]) => {
+    const t = b.c + b.w;
+    const m = CAT[cat];
+    return `<tr>
+      <td>${m.icon} ${m.label}</td>
+      <td class="bd-c">✓ ${b.c}</td>
+      <td class="bd-i">✗ ${b.w}</td>
+      <td class="bd-p">${Math.round((b.c / t) * 100)}%</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('r-breakdown').innerHTML = rows
+    ? `<table>
+        <thead><tr><th>Category</th><th>Correct</th><th>Missed</th><th>Score</th></tr></thead>
+        <tbody>${rows}</tbody>
+       </table>`
+    : '';
+
+  document.getElementById('q-fill').style.width = '100%';
+  show('screen-results');
+}
+
+init();
+</script>
+</body>
+</html>
