@@ -364,6 +364,7 @@ function buildPool(doShuffle = true) {
     selectedCats.forEach(cat => {
       if (!d[cat] || !d[cat].trim()) return;
       const answer = d[cat].trim();
+      if (/^[-–—\s]+$/.test(answer)) return;
       if (!catMap[cat]) catMap[cat] = [];
       catMap[cat].push({ region, answer });
       if (qType !== 'identify')
