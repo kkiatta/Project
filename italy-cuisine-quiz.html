@@ -183,6 +183,7 @@ h1 em { font-style:italic; color:var(--terracotta); }
 <div id="screen-quiz" style="display:none">
   <div class="container">
     <div class="quiz-header">
+      <button class="text-btn back-link" style="border:none;background:none;cursor:pointer;font:inherit" onclick="exitQuiz()">← Exit Quiz</button>
       <div class="progress-info">
         <span id="q-progress">Question 1 of 10</span>
         <span class="score-tally" id="q-score">✓ 0 &nbsp; ✗ 0</span>
@@ -469,6 +470,12 @@ function record(isRight) {
   if (!breakdown[cat]) breakdown[cat] = { c:0, w:0 };
   if (isRight) { nCorrect++; breakdown[cat].c++; }
   else { nWrong++; breakdown[cat].w++; }
+}
+
+function exitQuiz() {
+  if (confirm('Exit this quiz? Your progress on the current attempt will be lost.')) {
+    show('screen-start');
+  }
 }
 
 function nextQ() {
