@@ -744,6 +744,13 @@
       <div id="view-mode">
         <div class="category-block">
           <div class="category-header">
+            <span class="category-icon">🎨</span>
+            <span class="category-title">Food Style</span>
+          </div>
+          <div class="category-content" id="view-style">—</div>
+        </div>
+        <div class="category-block">
+          <div class="category-header">
             <span class="category-icon">🍽️</span>
             <span class="category-title">Signature Foods</span>
           </div>
@@ -816,6 +823,10 @@
       </div>
 
       <div class="edit-form" id="edit-form">
+        <div class="field-group">
+          <label>🎨 Food Style</label>
+          <textarea id="edit-style" placeholder="e.g. Rustic mountain cooking, Mediterranean, Rich cream-based, Peasant cuisine…"></textarea>
+        </div>
         <div class="field-group">
           <label>🍽️ Signature Foods</label>
           <textarea id="edit-food" placeholder="e.g. Bistecca alla Fiorentina, Ribollita, Pappardelle al cinghiale…"></textarea>
@@ -903,9 +914,9 @@ function save() {
 function getStatus(id) {
   const d = data[id];
   if (!d) return 'empty';
-  const filled = [d.food, d.pasta, d.wine, d.cheese, d.vegetables, d.meat, d.fish, d.desserts, d.notable].filter(v => v && v.trim()).length;
+  const filled = [d.style, d.food, d.pasta, d.wine, d.cheese, d.vegetables, d.meat, d.fish, d.desserts, d.notable].filter(v => v && v.trim()).length;
   if (filled === 0) return 'empty';
-  if (filled === 9) return 'complete';
+  if (filled === 10) return 'complete';
   return 'partial';
 }
 
@@ -984,6 +995,7 @@ function selectRegion(id) {
     }
   };
 
+  setContent('view-style', d.style);
   setContent('view-food', d.food);
   setContent('view-pasta', d.pasta);
   setContent('view-wine', d.wine);
@@ -1002,6 +1014,7 @@ function selectRegion(id) {
 
 function openEdit() {
   const d = data[activeRegion] || {};
+  document.getElementById('edit-style').value = d.style || '';
   document.getElementById('edit-food').value = d.food || '';
   document.getElementById('edit-pasta').value = d.pasta || '';
   document.getElementById('edit-wine').value = d.wine || '';
@@ -1024,6 +1037,7 @@ function cancelEdit() {
 function autoSave() {
   if (!activeRegion) return;
   data[activeRegion] = {
+    style: document.getElementById('edit-style').value.trim(),
     food: document.getElementById('edit-food').value.trim(),
     pasta: document.getElementById('edit-pasta').value.trim(),
     wine: document.getElementById('edit-wine').value.trim(),
@@ -1050,6 +1064,7 @@ function showAutoSaveToast() {
 function saveRegion() {
   if (!activeRegion) return;
   data[activeRegion] = {
+    style: document.getElementById('edit-style').value.trim(),
     food: document.getElementById('edit-food').value.trim(),
     pasta: document.getElementById('edit-pasta').value.trim(),
     wine: document.getElementById('edit-wine').value.trim(),
