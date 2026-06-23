@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Italia — Region Map Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f5f0e8;
+    --parchment: #ede5d0;
+    --ink: #1a1208;
+    --terracotta: #c4603a;
+    --wine: #6b2737;
+    --olive: #6b7c45;
+    --olive-light: #8a9e5e;
+    --gold: #c9972a;
+    --gold-light: #e8b84b;
+    --border: #b8a882;
+    --shadow: rgba(26, 18, 8, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background-color: var(--cream);
+    color: var(--ink);
+    font-family: 'Cormorant Garamond', serif;
+    min-height: 100vh;
+  }
+
+  /* START SCREEN */
+  #start-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.35rem;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 0.8rem;
+  }
+
+  .main-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 400;
+    line-height: 1.1;
+    margin-bottom: 0.8rem;
+  }
+  .main-title em { font-style: italic; color: var(--terracotta); }
+
+  .subtitle {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 1.05rem;
+    color: #6b5c3e;
+    margin-bottom: 2rem;
+    max-width: 420px;
+    line-height: 1.6;
+  }
+
+  .btn-primary {
+    padding: 0.85rem 2.4rem;
+    background: var(--terracotta);
+    color: var(--cream);
+    border: none;
+    cursor: pointer;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.9rem;
+    letter-spacing: 0.25rem;
+    text-transform: uppercase;
+    border-radius: 3px;
+    transition: background 0.2s;
+    margin-bottom: 1rem;
+    display: inline-block;
+    text-decoration: none;
+  }
+  .btn-primary:hover { background: var(--wine); }
+
+  .btn-secondary {
+    padding: 0.75rem 2rem;
+    background: transparent;
+    color: #8a7558;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.2rem;
+    text-transform: uppercase;
+    border-radius: 3px;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .btn-secondary:hover { border-color: #8a7558; color: var(--ink); }
+
+  /* GAME SCREEN */
+  #game-screen { display: none; }
+
+  .game-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .game-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    font-weight: 400;
+  }
+  .game-title em { font-style: italic; color: var(--terracotta); }
+
+  .progress-pill {
+    font-size: 0.72rem;
+    letter-spacing: 0.2rem;
+    text-transform: uppercase;
+    color: #8a7558;
+    background: var(--parchment);
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+
+  .game-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .map-wrapper {
+    display: flex;
+    justify-content: center;
+  }
+
+  .map-container {
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .map-container svg {
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 8px 24px var(--shadow));
+  }
+
+  .region-path {
+    stroke: #8a7558;
+    stroke-width: 0.8;
+    cursor: pointer;
+    transition: fill 0.15s ease, stroke 0.15s ease;
+    fill: var(--parchment);
+  }
+
+  .region-path:hover { fill: var(--gold-light) !important; stroke: var(--terracotta); stroke-width: 1.5; }
+  .region-path.found { fill: #b8d49a !important; stroke: var(--olive); stroke-width: 0.8; cursor: default; pointer-events: none; }
+  .region-path.correct-flash { fill: var(--olive) !important; stroke: #3a5c20; stroke-width: 2; }
+  .region-path.wrong-flash { fill: #c44040 !important; stroke: #8b1a1a; stroke-width: 2; }
+  .region-path.reveal-flash { fill: var(--gold) !important; stroke: var(--wine); stroke-width: 2; }
+
+  .region-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 7px;
+    fill: #3a2c1a;
+    pointer-events: none;
+    text-anchor: middle;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .region-label.visible { opacity: 1; }
+
+  /* QUESTION PANEL */
+  .question-panel {
+    border-left: 1px solid var(--border);
+    padding-left: 2rem;
+    padding-top: 1rem;
+  }
+
+  .q-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.3rem;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 0.4rem;
+  }
+
+  .q-name {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.7rem, 2.5vw, 2.6rem);
+    font-weight: 400;
+    line-height: 1.1;
+    color: var(--ink);
+    margin-bottom: 0.3rem;
+  }
+
+  .q-italian {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 0.9rem;
+    color: var(--terracotta);
+    margin-bottom: 1.2rem;
+  }
+
+  .q-hint {
+    font-size: 0.82rem;
+    color: #9a8a6e;
+    font-style: italic;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+  }
+
+  .feedback-msg {
+    min-height: 2.6rem;
+    padding: 0.6rem 0.8rem;
+    border-radius: 3px;
+    font-size: 0.9rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+    margin-bottom: 1.2rem;
+    line-height: 1.4;
+  }
+  .feedback-msg.show { opacity: 1; }
+  .feedback-msg.correct { background: rgba(107, 124, 69, 0.12); color: var(--olive); border: 1px solid var(--olive-light); }
+  .feedback-msg.wrong   { background: rgba(196, 64, 64, 0.09); color: #c44040; border: 1px solid #e08080; }
+
+  .score-row {
+    display: flex;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .score-box {
+    flex: 1;
+    text-align: center;
+    padding: 0.7rem 0.5rem;
+    background: var(--parchment);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  .score-box .num {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.7rem;
+    font-weight: 400;
+    line-height: 1;
+  }
+  .score-box .lbl {
+    font-size: 0.62rem;
+    letter-spacing: 0.18rem;
+    text-transform: uppercase;
+    color: #8a7558;
+    margin-top: 0.15rem;
+  }
+  .score-box.green .num { color: var(--olive); }
+  .score-box.red .num   { color: #c44040; }
+
+  /* RESULT SCREEN */
+  #result-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .result-num {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3.5rem, 9vw, 5.5rem);
+    font-weight: 400;
+    color: var(--terracotta);
+    line-height: 1;
+    margin-bottom: 0.2rem;
+  }
+
+  .result-sub {
+    font-size: 0.72rem;
+    letter-spacing: 0.3rem;
+    text-transform: uppercase;
+    color: #8a7558;
+    margin-bottom: 1rem;
+  }
+
+  .result-msg {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 1.15rem;
+    color: #6b5c3e;
+    margin-bottom: 2rem;
+    max-width: 380px;
+    line-height: 1.6;
+  }
+
+  .missed-section {
+    text-align: left;
+    max-width: 420px;
+    width: 100%;
+    margin-bottom: 2rem;
+  }
+  .missed-title {
+    font-size: 0.68rem;
+    letter-spacing: 0.25rem;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 0.6rem;
+  }
+  .missed-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .missed-chip {
+    padding: 0.22rem 0.6rem;
+    background: rgba(196, 64, 64, 0.08);
+    border: 1px solid #e08080;
+    border-radius: 3px;
+    font-size: 0.82rem;
+    color: #c44040;
+  }
+
+  .result-actions { display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center; }
+
+  @media (max-width: 860px) {
+    .game-layout { grid-template-columns: 1fr; }
+    .question-panel { border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── START SCREEN ─────────────────────────────────── -->
+<div id="start-screen">
+  <div class="eyebrow">Geography — Italian Regions</div>
+  <h1 class="main-title"><em>Italia</em> — Region Map Game</h1>
+  <p class="subtitle">Can you place all twenty Italian regions on the map from memory? A region name is shown — click where it belongs.</p>
+  <button class="btn-primary" onclick="startGame()">Begin Game</button><br>
+  <a href="italy-cuisine-map.html" class="btn-secondary">← Back to Atlas</a>
+</div>
+
+<!-- ── GAME SCREEN ──────────────────────────────────── -->
+<div id="game-screen">
+  <div class="game-header">
+    <div class="game-title"><em>Italia</em> — Region Map Game</div>
+    <div class="progress-pill" id="progress-pill">1 / 20</div>
+  </div>
+
+  <div class="game-layout">
+    <div class="map-wrapper">
+      <div class="map-container">
+        <svg viewBox="0 0 400 520" xmlns="http://www.w3.org/2000/svg">
+          <path class="region-path" id="reg-piemonte" d="M 26.3 88.1 L 27.8 82.9 L 25.6 81.5 L 27.8 79.4 L 28.3 79.4 L 32.2 78.0 L 36.1 76.3 L 36.7 75.5 L 37.5 75.1 L 50.7 67.9 L 49.5 61.0 L 52.1 57.2 L 53.0 57.1 L 58.4 47.6 L 57.1 45.3 L 63.5 39.0 L 65.3 37.8 L 67.7 37.1 L 68.6 37.6 L 68.8 41.3 L 67.9 43.9 L 74.8 58.5 L 73.6 59.7 L 72.2 61.2 L 72.5 62.9 L 74.5 70.3 L 77.0 78.3 L 80.7 82.8 L 78.7 83.6 L 77.0 85.7 L 74.1 85.6 L 71.1 85.2 L 71.1 86.4 L 72.3 91.2 L 71.3 92.3 L 72.4 93.6 L 84.9 102.6 L 88.0 105.8 L 87.6 106.6 L 90.5 108.4 L 92.6 110.8 L 92.3 113.6 L 92.2 116.7 L 87.7 116.5 L 82.4 115.6 L 65.1 122.4 L 59.9 126.2 L 55.8 130.3 L 50.4 138.7 L 48.0 138.0 L 47.3 137.7 L 44.1 138.9 L 40.6 136.8 L 35.7 137.7 L 34.8 138.2 L 33.1 137.6 L 29.9 136.5 L 25.0 133.8 L 23.3 133.5 L 21.8 131.3 L 20.6 130.5 L 19.9 124.3 L 19.2 123.9 L 20.3 115.2 L 22.5 108.3 L 19.9 106.2 L 18.2 106.7 L 16.0 105.6 L 13.2 99.2 L 11.6 99.3 L 11.5 94.8 L 16.0 93.8 L 16.9 94.3 L 24.1 91.1 L 26.3 88.1 Z" />
+          <text class="region-label" id="label-reg-piemonte" x="56.1" y="96.0">Piemonte</text>
+
+          <path class="region-path" id="reg-valle-d-aosta" d="M 45.4 60.4 L 46.9 60.2 L 49.5 61.7 L 51.2 68.1 L 37.0 75.3 L 36.3 76.0 L 35.4 76.6 L 31.6 77.9 L 27.8 79.4 L 27.2 79.2 L 24.3 79.7 L 17.8 70.9 L 17.3 70.6 L 16.1 64.1 L 16.9 63.9 L 21.0 62.8 L 22.5 60.7 L 24.7 62.1 L 36.6 59.9 L 38.0 58.8 L 38.8 58.9 L 45.4 60.4 Z" />
+          <text class="region-label" id="label-reg-valle-d-aosta" x="33.5" y="68.7">Valle d'Aosta</text>
+
+          <path class="region-path" id="reg-lombardia" d="M 72.4 67.8 L 72.2 62.1 L 72.7 60.6 L 74.8 58.5 L 75.7 57.6 L 79.4 53.0 L 80.9 55.0 L 81.6 58.8 L 83.4 61.1 L 83.2 63.6 L 88.3 62.0 L 86.0 57.9 L 87.1 54.5 L 88.3 52.3 L 89.0 51.6 L 93.8 38.5 L 94.6 36.3 L 100.3 38.9 L 101.2 41.2 L 102.1 42.0 L 107.4 44.0 L 108.3 44.5 L 111.9 42.0 L 117.1 41.7 L 117.6 43.5 L 118.7 45.1 L 121.6 43.6 L 121.1 42.7 L 121.2 38.7 L 120.4 38.9 L 119.3 35.1 L 125.6 31.3 L 126.8 32.4 L 127.2 33.0 L 130.4 33.6 L 134.7 35.8 L 136.2 36.7 L 137.6 37.8 L 136.3 40.8 L 135.2 41.3 L 135.4 42.8 L 135.1 52.6 L 144.1 64.1 L 143.1 66.7 L 142.4 67.8 L 141.7 69.0 L 141.3 69.6 L 137.9 73.9 L 138.1 77.1 L 138.2 79.3 L 137.8 81.1 L 139.0 81.7 L 140.1 82.0 L 142.8 86.6 L 143.9 87.5 L 150.1 93.8 L 152.1 95.9 L 155.7 95.8 L 161.2 100.9 L 162.8 102.3 L 161.8 102.0 L 160.5 102.1 L 159.7 102.0 L 155.5 102.9 L 153.9 102.5 L 151.7 102.3 L 146.2 104.0 L 145.8 103.8 L 144.0 102.9 L 143.4 102.8 L 135.0 103.9 L 124.5 98.7 L 121.2 99.2 L 115.7 95.7 L 114.3 94.5 L 107.9 97.3 L 97.7 98.1 L 97.7 99.1 L 96.9 106.9 L 95.2 109.9 L 95.9 111.2 L 96.3 111.6 L 92.5 113.0 L 92.0 110.7 L 90.0 108.6 L 88.0 106.2 L 87.7 105.3 L 85.1 102.0 L 71.8 93.4 L 71.9 91.7 L 71.7 91.3 L 70.9 85.7 L 71.5 84.9 L 74.8 86.1 L 77.6 85.9 L 79.2 83.8 L 80.4 82.3 L 76.7 77.8 L 74.8 69.7 L 72.4 67.8 Z" />
+          <text class="region-label" id="label-reg-lombardia" x="109.1" y="76.9">Lombardia</text>
+
+          <path class="region-path" id="reg-trentino" d="M 182.1 33.3 L 180.6 33.6 L 177.0 34.7 L 176.2 35.1 L 176.9 36.6 L 177.7 36.7 L 177.6 38.3 L 176.5 45.4 L 177.1 45.4 L 178.3 51.8 L 176.9 52.2 L 176.1 52.4 L 172.7 52.6 L 170.1 58.7 L 166.3 56.7 L 165.4 56.7 L 164.7 57.2 L 163.2 57.9 L 162.5 57.9 L 160.1 60.6 L 158.8 60.6 L 157.4 63.3 L 154.6 69.2 L 152.1 69.9 L 146.7 69.7 L 146.2 69.4 L 144.7 64.3 L 143.5 64.2 L 135.3 52.0 L 134.9 42.5 L 135.7 40.9 L 136.9 40.8 L 137.0 36.9 L 135.7 36.3 L 134.1 35.7 L 132.6 29.8 L 131.4 29.6 L 130.9 29.7 L 130.5 26.9 L 131.4 24.8 L 131.5 23.2 L 134.3 20.6 L 136.7 20.3 L 137.7 19.8 L 141.6 22.4 L 142.7 23.0 L 146.7 24.0 L 148.9 23.8 L 151.0 22.4 L 151.7 22.0 L 152.0 20.4 L 154.7 16.8 L 157.4 15.3 L 158.1 14.8 L 158.8 14.7 L 159.3 14.7 L 162.5 15.5 L 166.7 14.3 L 169.2 13.5 L 171.5 14.2 L 172.5 14.3 L 173.6 15.3 L 176.4 14.3 L 177.8 13.3 L 178.3 13.2 L 179.0 12.6 L 179.5 12.3 L 180.7 12.2 L 181.6 11.8 L 185.6 10.7 L 186.4 12.9 L 185.7 13.4 L 186.0 14.7 L 190.2 18.8 L 191.3 23.3 L 193.8 25.9 L 196.8 27.5 L 189.5 30.2 L 185.7 29.3 L 182.1 33.3 Z" />
+          <text class="region-label" id="label-reg-trentino" x="160.0" y="38.6">Trentino-AA</text>
+
+          <path class="region-path" id="reg-veneto" d="M 138.1 77.1 L 138.0 75.7 L 139.5 72.0 L 141.7 69.0 L 142.2 68.2 L 142.8 67.1 L 143.4 66.1 L 145.1 64.5 L 146.7 69.7 L 147.1 70.0 L 152.7 70.2 L 155.3 68.6 L 157.5 62.4 L 159.3 60.6 L 160.6 60.9 L 163.2 57.9 L 164.0 57.9 L 165.2 57.0 L 166.0 56.6 L 166.8 56.6 L 170.7 58.6 L 173.6 52.6 L 176.6 52.3 L 177.7 52.0 L 178.6 51.3 L 176.6 45.4 L 176.1 44.8 L 178.1 38.0 L 176.9 36.6 L 176.4 36.5 L 176.7 34.9 L 177.7 34.6 L 181.2 33.6 L 186.2 29.6 L 190.0 29.9 L 199.1 28.5 L 200.9 28.8 L 202.2 35.9 L 196.1 41.5 L 209.0 63.5 L 210.1 64.8 L 213.6 67.0 L 216.0 72.9 L 213.7 73.1 L 212.2 73.4 L 211.3 73.7 L 209.5 74.7 L 207.2 75.9 L 206.3 76.6 L 205.2 77.3 L 203.8 77.8 L 202.7 78.3 L 201.9 78.6 L 200.8 79.2 L 197.3 80.7 L 196.5 81.0 L 193.4 82.8 L 191.5 87.8 L 191.3 89.0 L 192.2 92.9 L 192.4 96.0 L 194.3 98.2 L 194.8 98.6 L 196.4 99.9 L 197.2 100.5 L 197.8 100.7 L 198.2 103.0 L 197.7 104.1 L 197.2 105.4 L 196.5 106.9 L 195.0 107.9 L 189.9 102.6 L 189.3 103.0 L 184.0 101.4 L 177.0 101.3 L 176.5 101.4 L 166.8 102.9 L 163.6 103.2 L 160.7 100.7 L 156.3 95.5 L 151.4 95.5 L 149.6 93.7 L 143.2 86.9 L 141.7 87.5 L 139.1 81.8 L 138.7 82.3 L 138.3 81.0 L 138.2 78.6 L 138.1 77.1 Z" />
+          <text class="region-label" id="label-reg-veneto" x="181.2" y="67.5">Veneto</text>
+
+          <path class="region-path" id="reg-friuli" d="M 230.1 40.6 L 229.5 41.1 L 227.9 47.9 L 233.1 52.1 L 231.2 53.5 L 230.1 54.4 L 233.9 59.2 L 232.7 64.8 L 233.5 65.8 L 241.7 73.8 L 238.9 75.1 L 237.9 74.6 L 238.1 74.0 L 235.9 69.1 L 235.3 68.4 L 231.6 66.6 L 231.2 68.7 L 229.2 69.8 L 225.6 70.9 L 224.1 70.6 L 223.4 70.2 L 220.3 69.4 L 219.6 69.5 L 213.1 66.5 L 209.6 64.4 L 208.4 63.6 L 196.5 41.1 L 201.8 35.5 L 216.3 31.1 L 218.5 31.7 L 222.2 32.9 L 222.9 32.9 L 226.7 32.5 L 227.2 33.0 L 228.8 33.0 L 231.0 33.2 L 233.5 33.7 L 234.7 34.3 L 235.2 34.5 L 236.2 34.6 L 234.5 38.0 L 233.4 38.1 L 232.8 38.2 L 232.2 38.6 L 230.3 40.5 L 230.1 40.6 Z" />
+          <text class="region-label" id="label-reg-friuli" x="219.8" y="57.3">Friuli-VG</text>
+
+          <path class="region-path" id="reg-liguria" d="M 39.6 147.8 L 42.0 144.9 L 43.1 142.6 L 44.1 141.6 L 48.0 138.0 L 48.5 138.1 L 50.9 138.6 L 56.1 129.9 L 60.4 125.8 L 65.3 123.0 L 82.9 115.4 L 88.3 116.4 L 93.0 116.6 L 94.5 117.6 L 96.3 117.9 L 100.6 118.9 L 101.9 121.2 L 102.9 124.8 L 108.4 127.5 L 111.5 131.0 L 117.2 137.9 L 119.3 138.3 L 119.3 140.2 L 118.7 140.7 L 110.8 140.2 L 110.4 139.8 L 109.0 138.4 L 108.0 137.8 L 105.3 136.5 L 104.0 135.4 L 100.3 133.0 L 98.4 131.7 L 96.5 129.9 L 95.0 129.1 L 89.0 127.3 L 86.6 126.8 L 84.3 126.4 L 80.4 125.5 L 79.4 125.0 L 78.7 125.2 L 76.7 125.4 L 73.1 127.6 L 70.7 129.0 L 69.7 129.5 L 64.9 136.0 L 63.6 136.6 L 62.7 137.1 L 61.5 138.9 L 60.0 142.4 L 53.8 149.0 L 53.1 149.2 L 47.0 151.1 L 43.5 152.8 L 38.8 152.6 L 38.3 150.8 L 39.1 147.9 L 39.6 147.8 Z" />
+          <text class="region-label" id="label-reg-liguria" x="78.1" y="131.7">Liguria</text>
+
+          <path class="region-path" id="reg-emilia-romagna" d="M 96.5 111.6 L 95.9 111.2 L 95.4 110.9 L 95.8 109.6 L 96.8 106.2 L 97.8 98.4 L 98.1 97.7 L 108.6 97.6 L 114.8 94.3 L 116.4 95.0 L 121.9 98.9 L 125.1 99.0 L 135.5 104.0 L 144.0 102.9 L 144.7 103.2 L 146.5 103.5 L 147.0 103.5 L 152.1 101.8 L 154.3 102.9 L 156.2 102.8 L 160.2 101.9 L 161.1 102.3 L 162.5 102.1 L 163.3 102.2 L 164.2 103.1 L 167.3 103.2 L 177.0 101.3 L 177.5 101.3 L 184.6 101.5 L 189.9 102.7 L 190.4 102.6 L 192.7 109.4 L 193.3 109.4 L 191.8 107.1 L 190.9 107.0 L 190.2 107.8 L 189.6 110.4 L 189.4 112.7 L 190.7 117.7 L 190.7 119.0 L 190.6 119.8 L 191.4 125.1 L 191.9 126.6 L 192.0 127.5 L 193.7 133.1 L 197.0 137.3 L 200.6 140.7 L 202.6 142.9 L 203.0 143.3 L 195.6 145.2 L 195.9 147.4 L 194.4 150.7 L 191.2 152.0 L 189.9 153.6 L 185.7 154.1 L 180.2 152.9 L 179.4 152.2 L 173.9 149.5 L 173.1 149.2 L 172.7 146.7 L 171.8 138.0 L 170.6 138.9 L 169.6 138.2 L 160.7 134.4 L 158.7 136.6 L 157.8 136.5 L 156.7 137.7 L 154.3 138.5 L 152.9 139.1 L 151.5 139.3 L 148.2 139.5 L 135.4 137.0 L 134.1 135.2 L 133.4 134.8 L 131.0 133.1 L 129.9 131.9 L 125.4 131.2 L 122.5 128.1 L 117.7 126.2 L 116.3 123.1 L 115.6 123.0 L 112.3 123.1 L 109.6 126.5 L 107.9 127.4 L 102.1 124.9 L 101.9 120.5 L 99.9 118.9 L 95.8 117.6 L 94.0 117.5 L 92.4 116.8 L 92.2 116.0 L 96.5 111.6 Z" />
+          <text class="region-label" id="label-reg-emilia-romagna" x="151.0" y="122.1">Emilia-Romagna</text>
+
+          <path class="region-path" id="reg-toscana" d="M 114.5 136.2 L 111.0 130.6 L 107.9 127.5 L 108.7 126.8 L 110.1 126.5 L 113.1 123.0 L 116.3 123.1 L 116.8 123.3 L 118.1 126.5 L 122.9 128.5 L 125.8 131.7 L 130.6 132.5 L 131.5 133.5 L 134.0 135.2 L 134.5 135.8 L 136.2 137.6 L 148.7 138.8 L 152.1 139.3 L 153.4 138.8 L 154.8 138.4 L 156.2 137.3 L 158.4 136.4 L 159.3 136.0 L 161.3 134.5 L 170.1 138.5 L 171.0 138.5 L 172.3 138.1 L 172.6 147.5 L 173.8 149.4 L 174.5 149.7 L 180.0 152.3 L 180.7 153.2 L 186.2 154.0 L 190.6 153.4 L 193.2 155.4 L 192.3 157.0 L 189.5 157.0 L 189.1 158.1 L 187.6 158.7 L 186.6 163.5 L 185.2 166.5 L 183.3 169.2 L 186.5 174.1 L 186.9 174.2 L 187.9 172.9 L 188.4 174.2 L 180.0 179.4 L 179.5 182.3 L 168.4 210.7 L 167.5 210.6 L 162.1 212.5 L 161.4 212.3 L 160.1 212.1 L 153.8 212.9 L 154.8 205.3 L 150.4 201.3 L 149.5 199.5 L 149.2 198.8 L 145.6 196.6 L 143.8 196.1 L 142.1 195.5 L 141.5 195.1 L 142.6 190.4 L 140.5 189.0 L 136.8 188.4 L 134.7 184.4 L 134.9 182.7 L 131.4 169.2 L 130.4 167.9 L 127.4 163.4 L 126.3 152.8 L 125.5 149.8 L 120.7 142.8 L 119.2 140.2 L 119.9 139.6 L 118.6 138.1 L 117.0 137.3 L 114.5 136.2 Z" />
+          <text class="region-label" id="label-reg-toscana" x="156.2" y="166.9">Toscana</text>
+
+          <path class="region-path" id="reg-umbria" d="M 218.7 201.3 L 208.8 205.7 L 203.2 210.4 L 200.1 212.7 L 189.4 205.0 L 188.4 201.2 L 183.2 201.5 L 179.2 181.3 L 180.4 179.2 L 188.8 173.8 L 187.5 173.4 L 186.5 174.1 L 186.0 173.8 L 182.7 169.1 L 185.6 166.3 L 186.8 162.9 L 189.8 161.0 L 192.1 163.6 L 194.0 163.8 L 196.3 164.1 L 197.6 163.9 L 202.0 167.8 L 202.9 167.6 L 204.5 167.3 L 207.3 173.1 L 208.0 174.9 L 208.9 177.3 L 210.9 188.4 L 217.1 191.1 L 217.5 191.9 L 218.0 192.4 L 218.6 193.5 L 219.4 193.4 L 220.4 193.2 L 219.8 196.8 L 218.7 201.3 Z" />
+          <text class="region-label" id="label-reg-umbria" x="198.0" y="187.6">Umbria</text>
+
+          <path class="region-path" id="reg-marche" d="M 197.7 164.0 L 197.1 163.7 L 195.7 163.3 L 193.4 163.4 L 191.7 163.0 L 189.1 160.8 L 188.1 158.4 L 189.6 157.6 L 190.1 157.1 L 192.2 156.3 L 192.8 155.0 L 191.7 151.7 L 194.2 150.0 L 196.9 147.7 L 208.1 145.3 L 208.8 145.8 L 209.9 146.4 L 211.1 147.0 L 211.8 147.7 L 212.3 148.3 L 213.6 149.4 L 215.8 151.0 L 217.3 152.5 L 219.0 154.0 L 220.4 155.1 L 221.4 156.1 L 225.5 158.7 L 228.1 160.1 L 231.7 161.0 L 233.1 162.3 L 234.8 167.5 L 235.3 168.8 L 235.6 170.0 L 237.6 174.3 L 241.1 184.8 L 241.5 186.6 L 241.7 187.7 L 240.9 191.4 L 238.5 192.4 L 236.2 192.9 L 231.4 194.8 L 230.1 195.6 L 229.4 197.8 L 222.1 197.6 L 220.2 198.0 L 220.5 196.3 L 219.6 193.5 L 218.9 193.6 L 218.2 193.0 L 217.5 191.9 L 217.2 191.2 L 216.2 190.7 L 210.3 188.0 L 208.4 177.0 L 207.5 174.7 L 207.2 172.4 L 204.3 168.1 L 202.2 167.7 L 201.7 168.3 L 197.7 164.0 Z" />
+          <text class="region-label" id="label-reg-marche" x="213.0" y="172.1">Marche</text>
+
+          <path class="region-path" id="reg-lazio" d="M 175.6 194.7 L 183.8 201.4 L 188.8 201.6 L 190.0 205.4 L 200.8 212.2 L 203.7 210.1 L 209.3 205.4 L 221.0 198.2 L 222.6 197.6 L 225.2 204.6 L 222.0 204.4 L 218.6 209.5 L 218.5 211.5 L 219.0 213.6 L 222.3 218.5 L 225.0 222.3 L 222.7 223.7 L 216.4 223.3 L 214.8 224.4 L 221.0 230.3 L 228.0 237.1 L 241.8 241.2 L 245.5 245.7 L 245.8 249.4 L 241.2 254.6 L 241.4 257.2 L 240.2 260.5 L 239.7 262.1 L 232.4 261.9 L 226.7 261.0 L 219.6 260.6 L 217.4 261.9 L 215.8 263.1 L 213.4 258.8 L 211.6 256.6 L 210.0 255.4 L 209.2 255.0 L 200.3 251.1 L 198.2 248.1 L 197.8 247.7 L 196.7 246.2 L 195.6 245.0 L 193.6 243.1 L 192.3 242.2 L 191.9 241.9 L 190.8 241.3 L 190.0 241.0 L 188.5 237.9 L 181.0 229.7 L 179.1 227.9 L 176.9 228.2 L 175.5 226.1 L 171.1 218.3 L 166.2 214.2 L 164.4 213.3 L 168.3 210.7 L 168.9 210.7 L 175.6 194.7 Z" />
+          <text class="region-label" id="label-reg-lazio" x="206.5" y="224.1">Lazio</text>
+
+          <path class="region-path" id="reg-abruzzo" d="M 243.7 243.0 L 241.1 241.1 L 227.4 236.9 L 220.5 230.1 L 215.5 224.2 L 216.6 222.6 L 223.4 223.5 L 224.6 221.9 L 221.8 218.1 L 219.6 213.2 L 218.2 211.0 L 219.1 209.1 L 222.5 204.4 L 225.8 204.5 L 229.7 197.3 L 230.5 195.2 L 231.9 195.0 L 236.7 192.7 L 239.2 192.1 L 241.6 191.2 L 243.2 192.5 L 243.7 194.4 L 245.3 198.6 L 249.5 205.8 L 250.2 206.5 L 251.2 207.9 L 254.8 211.3 L 257.1 213.0 L 259.7 216.0 L 260.4 216.7 L 264.4 220.4 L 267.9 222.0 L 268.5 223.7 L 268.0 230.5 L 259.9 236.6 L 258.6 235.3 L 257.7 235.3 L 252.5 235.8 L 247.8 240.8 L 246.7 242.4 L 244.4 242.6 L 243.7 243.0 Z" />
+          <text class="region-label" id="label-reg-abruzzo" x="242.5" y="223.2">Abruzzo</text>
+
+          <path class="region-path" id="reg-molise" d="M 259.0 253.9 L 257.1 253.3 L 249.8 251.0 L 249.0 251.7 L 248.1 253.3 L 248.8 254.3 L 248.6 255.8 L 246.5 255.0 L 246.2 249.2 L 245.4 245.1 L 245.0 242.7 L 247.3 242.4 L 248.4 240.8 L 252.8 235.2 L 258.2 235.1 L 259.2 235.9 L 260.0 237.3 L 268.4 229.9 L 276.0 229.0 L 276.6 229.2 L 277.3 229.3 L 279.4 231.2 L 280.0 231.9 L 282.1 242.0 L 281.8 242.5 L 280.0 244.0 L 275.3 253.1 L 271.9 253.9 L 271.5 253.5 L 268.5 255.3 L 262.6 256.1 L 259.0 253.9 Z" />
+          <text class="region-label" id="label-reg-molise" x="262.4" y="243.1">Molise</text>
+
+          <path class="region-path" id="reg-campania" d="M 249.6 250.7 L 250.4 251.8 L 257.8 253.5 L 263.2 256.3 L 269.4 255.0 L 271.9 253.9 L 272.5 254.2 L 275.8 253.0 L 283.9 260.3 L 285.1 264.4 L 285.6 267.4 L 286.5 268.3 L 291.2 268.6 L 291.7 269.2 L 293.9 269.9 L 294.4 270.1 L 292.5 277.3 L 288.9 277.6 L 291.8 286.1 L 297.5 297.4 L 298.6 298.7 L 299.9 299.2 L 300.0 300.9 L 301.2 302.6 L 301.5 307.0 L 297.7 313.4 L 296.1 312.4 L 295.3 312.5 L 294.7 312.5 L 291.3 315.5 L 289.8 315.7 L 288.5 315.5 L 274.6 305.2 L 275.1 304.4 L 274.6 292.4 L 266.1 287.8 L 262.8 289.3 L 255.8 290.4 L 256.2 289.5 L 260.6 285.7 L 257.2 281.8 L 253.0 279.9 L 251.6 281.6 L 249.8 280.4 L 246.6 277.0 L 245.7 274.8 L 244.9 273.6 L 243.2 271.6 L 242.7 270.0 L 241.0 266.8 L 238.0 263.0 L 240.2 261.8 L 240.8 260.1 L 241.5 256.5 L 241.6 254.2 L 246.8 255.6 L 249.1 256.0 L 248.3 253.7 L 248.3 252.8 L 249.4 251.2 L 249.6 250.7 Z" />
+          <text class="region-label" id="label-reg-campania" x="273.9" y="279.8">Campania</text>
+
+          <path class="region-path" id="reg-puglia" d="M 280.7 255.8 L 280.4 243.7 L 282.4 242.2 L 281.4 241.6 L 282.4 232.8 L 284.8 233.0 L 286.1 233.0 L 291.8 233.7 L 293.1 233.5 L 294.3 233.3 L 295.0 233.2 L 295.9 233.0 L 302.4 233.0 L 303.3 232.9 L 305.1 232.7 L 306.2 232.5 L 307.0 232.4 L 308.3 232.1 L 313.2 233.1 L 312.8 241.2 L 310.9 243.1 L 306.9 250.8 L 308.9 253.4 L 311.7 254.9 L 312.2 255.2 L 314.3 256.4 L 319.9 259.1 L 323.0 260.5 L 323.6 261.2 L 327.7 263.2 L 332.5 265.2 L 333.6 265.5 L 334.3 265.7 L 335.9 266.7 L 338.7 267.8 L 344.4 269.9 L 346.0 271.0 L 347.7 272.0 L 348.7 272.8 L 354.6 278.0 L 355.2 278.6 L 357.2 280.3 L 358.8 281.1 L 360.1 281.5 L 361.0 281.9 L 362.8 282.5 L 364.0 283.0 L 364.5 283.4 L 366.0 284.5 L 366.9 285.0 L 367.9 285.8 L 369.0 286.1 L 371.0 286.4 L 377.3 294.3 L 378.8 295.0 L 382.8 298.6 L 383.9 300.0 L 386.1 302.6 L 387.5 314.6 L 387.2 315.7 L 386.3 317.5 L 380.0 322.7 L 377.2 320.7 L 376.6 320.3 L 373.3 316.1 L 372.2 309.4 L 369.1 303.6 L 366.7 303.1 L 366.1 303.0 L 363.1 302.6 L 361.8 302.7 L 360.9 302.8 L 358.9 302.9 L 357.7 303.0 L 352.6 300.5 L 351.4 299.9 L 348.9 298.4 L 349.6 296.7 L 347.9 295.1 L 341.6 294.2 L 337.7 297.7 L 337.3 298.3 L 335.8 297.6 L 332.5 295.1 L 332.2 289.2 L 332.5 287.1 L 331.7 285.5 L 331.4 284.2 L 326.9 284.5 L 326.2 284.0 L 324.3 284.4 L 321.8 284.2 L 320.1 282.7 L 319.7 282.1 L 315.3 275.9 L 312.7 276.3 L 310.2 270.4 L 309.7 270.1 L 308.2 268.6 L 301.6 268.4 L 299.2 268.9 L 296.4 268.4 L 293.9 269.9 L 293.2 269.6 L 291.2 268.6 L 290.6 268.3 L 286.1 268.0 L 285.1 266.6 L 285.7 264.1 L 283.4 260.3 L 280.7 255.8 Z" />
+          <text class="region-label" id="label-reg-puglia" x="332.6" y="277.3">Puglia</text>
+
+          <path class="region-path" id="reg-basilicata" d="M 292.4 288.4 L 291.3 285.9 L 289.5 277.5 L 293.1 277.1 L 296.9 268.5 L 300.5 268.8 L 302.0 268.9 L 308.7 268.6 L 310.2 270.4 L 310.7 270.9 L 313.2 276.8 L 315.9 276.2 L 320.1 282.7 L 320.5 283.2 L 322.2 284.9 L 324.8 284.0 L 326.7 284.5 L 326.8 283.8 L 331.9 284.5 L 332.3 286.0 L 332.3 287.7 L 332.6 289.8 L 333.0 295.6 L 336.2 298.0 L 336.8 299.3 L 336.0 300.6 L 334.6 302.7 L 333.1 306.5 L 332.1 308.1 L 330.2 310.6 L 320.3 318.5 L 317.5 318.7 L 310.2 319.0 L 304.9 315.7 L 303.0 316.8 L 302.0 318.7 L 300.9 317.3 L 300.5 316.7 L 302.0 306.6 L 300.8 302.2 L 300.0 300.2 L 299.4 298.8 L 298.3 298.2 L 297.0 297.0 L 292.4 288.4 Z" />
+          <text class="region-label" id="label-reg-basilicata" x="308.8" y="294.4">Basilicata</text>
+
+          <path class="region-path" id="reg-calabria" d="M 308.6 338.7 L 306.4 335.7 L 304.7 332.2 L 304.3 330.9 L 304.1 330.1 L 303.4 328.2 L 303.0 326.0 L 301.7 319.0 L 302.2 318.1 L 303.3 316.2 L 305.2 316.2 L 310.7 319.3 L 318.1 318.5 L 320.6 317.9 L 328.2 319.5 L 326.7 321.2 L 325.0 325.1 L 326.3 327.5 L 327.5 331.1 L 330.7 332.1 L 339.6 337.2 L 345.0 341.2 L 345.2 344.5 L 345.4 352.0 L 346.9 357.4 L 347.7 357.7 L 345.2 362.4 L 344.7 362.9 L 343.4 362.4 L 340.2 361.5 L 338.9 361.7 L 338.1 361.9 L 333.5 363.8 L 332.8 364.2 L 332.1 364.7 L 330.4 366.0 L 327.7 368.6 L 326.9 370.5 L 327.4 375.2 L 327.8 379.8 L 326.1 385.5 L 321.8 388.4 L 317.7 392.3 L 313.6 401.6 L 313.2 402.7 L 312.9 403.4 L 312.1 404.4 L 310.5 405.2 L 307.3 405.0 L 304.8 405.3 L 298.7 403.2 L 298.4 402.7 L 302.9 389.9 L 303.4 389.3 L 306.5 381.8 L 306.8 380.5 L 305.3 376.5 L 304.2 374.1 L 306.3 372.6 L 312.2 355.3 L 311.4 349.4 L 311.3 347.7 L 311.2 346.7 L 311.1 346.0 L 310.7 344.2 L 308.6 338.7 Z" />
+          <text class="region-label" id="label-reg-calabria" x="319.6" y="352.8">Calabria</text>
+
+          <path class="region-path" id="reg-sicilia" d="M 210.7 400.9 L 214.2 399.4 L 220.5 394.4 L 221.2 393.9 L 224.1 392.8 L 227.5 397.8 L 230.5 397.2 L 231.7 400.2 L 232.5 400.8 L 239.0 403.0 L 242.2 401.8 L 242.8 401.4 L 243.5 401.0 L 244.5 400.6 L 245.8 400.6 L 247.6 401.1 L 251.0 401.2 L 256.4 401.1 L 261.3 400.4 L 262.2 400.2 L 268.8 395.6 L 269.3 395.0 L 277.7 395.5 L 278.4 395.5 L 286.9 393.1 L 289.4 392.3 L 291.7 391.2 L 294.8 389.0 L 297.0 390.1 L 297.5 390.8 L 294.5 395.9 L 294.2 396.4 L 293.8 397.6 L 293.3 398.7 L 291.7 400.8 L 290.5 402.7 L 289.9 403.5 L 287.7 406.8 L 284.7 411.9 L 281.7 422.0 L 280.4 426.7 L 280.5 427.6 L 280.4 429.2 L 281.7 431.8 L 284.7 433.4 L 285.3 438.8 L 288.2 444.5 L 276.1 458.3 L 268.5 457.1 L 263.3 454.4 L 260.5 453.0 L 258.4 448.0 L 256.4 445.1 L 255.6 444.1 L 255.2 443.6 L 254.2 442.9 L 252.4 441.8 L 251.0 441.1 L 248.2 440.4 L 246.8 440.4 L 245.7 440.3 L 243.9 440.7 L 241.1 440.2 L 237.6 438.6 L 235.8 437.2 L 235.0 436.7 L 228.6 432.4 L 225.1 429.8 L 223.9 429.4 L 219.1 424.0 L 216.8 423.4 L 216.1 423.3 L 214.4 423.7 L 213.4 421.9 L 211.0 420.2 L 207.6 420.0 L 206.6 420.0 L 206.1 420.1 L 198.2 416.6 L 196.4 406.0 L 197.6 401.3 L 199.2 400.0 L 201.8 398.9 L 204.6 394.8 L 206.9 396.1 L 210.7 400.9 Z" />
+          <text class="region-label" id="label-reg-sicilia" x="253.2" y="419.1">Sicilia</text>
+
+          <path class="region-path" id="reg-sardegna" d="M 65.6 294.3 L 65.0 294.0 L 64.3 292.9 L 60.8 291.1 L 60.8 290.1 L 59.3 290.5 L 59.8 288.3 L 60.0 287.4 L 59.1 282.8 L 60.9 278.3 L 60.4 276.5 L 61.1 274.6 L 61.8 277.3 L 62.5 278.0 L 65.6 279.0 L 65.7 279.6 L 66.6 279.6 L 67.7 279.9 L 70.5 280.2 L 73.7 278.6 L 74.7 277.3 L 81.2 273.6 L 82.0 271.5 L 83.6 270.7 L 84.0 270.3 L 84.4 269.7 L 84.8 269.2 L 88.4 267.1 L 89.3 266.8 L 90.6 266.0 L 91.2 262.7 L 94.0 262.1 L 98.8 265.0 L 99.9 268.2 L 102.8 269.4 L 102.4 271.4 L 104.7 272.0 L 104.7 273.0 L 104.4 274.6 L 103.2 275.8 L 102.7 276.3 L 103.3 276.1 L 103.8 276.1 L 105.9 277.0 L 106.0 277.6 L 108.7 279.4 L 108.3 283.2 L 108.7 284.5 L 111.8 295.0 L 111.2 296.6 L 110.2 298.9 L 106.0 303.8 L 105.9 307.5 L 106.7 309.1 L 107.7 310.7 L 109.1 311.8 L 108.2 315.0 L 107.7 317.4 L 107.5 323.5 L 106.1 336.5 L 104.9 343.6 L 101.4 353.0 L 100.3 353.2 L 99.0 352.8 L 96.2 350.2 L 93.9 349.5 L 89.8 350.0 L 88.3 350.0 L 86.9 355.9 L 87.1 357.0 L 84.1 361.3 L 81.4 363.9 L 73.8 361.7 L 72.3 359.7 L 67.0 354.5 L 66.4 348.2 L 67.0 340.8 L 67.3 337.1 L 68.1 335.8 L 68.2 326.9 L 69.6 327.6 L 71.5 323.4 L 68.1 320.8 L 69.3 312.5 L 68.6 309.2 L 66.3 301.2 L 66.0 300.2 L 66.6 298.7 L 66.3 296.3 L 65.6 294.3 Z" />
+          <text class="region-label" id="label-reg-sardegna" x="85.8" y="311.5">Sardegna</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="question-panel">
+      <div class="q-label">Find this region on the map</div>
+      <div class="q-name" id="q-name">—</div>
+      <div class="q-italian" id="q-italian">—</div>
+      <div class="q-hint">Click the correct region on the map.</div>
+      <div class="feedback-msg" id="feedback-msg"></div>
+      <div class="score-row">
+        <div class="score-box green">
+          <div class="num" id="score-correct">0</div>
+          <div class="lbl">Correct</div>
+        </div>
+        <div class="score-box red">
+          <div class="num" id="score-wrong">0</div>
+          <div class="lbl">Wrong</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── RESULT SCREEN ─────────────────────────────────── -->
+<div id="result-screen">
+  <div class="eyebrow">Game Complete</div>
+  <div class="result-num" id="result-num">—</div>
+  <div class="result-sub">Regions identified correctly</div>
+  <div class="result-msg" id="result-msg">—</div>
+  <div class="missed-section" id="missed-section" style="display:none">
+    <div class="missed-title">Regions to Review</div>
+    <div class="missed-chips" id="missed-chips"></div>
+  </div>
+  <div class="result-actions">
+    <button class="btn-primary" onclick="startGame()">Play Again</button>
+    <a href="italy-cuisine-map.html" class="btn-secondary">← Back to Atlas</a>
+  </div>
+</div>
+
+<script>
+const REGIONS = [
+  { id: 'reg-valle-d-aosta',  name: "Valle d'Aosta",         italian: "Valle d'Aosta" },
+  { id: 'reg-piemonte',       name: 'Piemonte',              italian: 'Piedmont' },
+  { id: 'reg-liguria',        name: 'Liguria',               italian: 'Italian Riviera' },
+  { id: 'reg-lombardia',      name: 'Lombardia',             italian: 'Lombardy' },
+  { id: 'reg-trentino',       name: 'Trentino-Alto Adige',   italian: 'Südtirol / Trentino' },
+  { id: 'reg-veneto',         name: 'Veneto',                italian: 'La Serenissima' },
+  { id: 'reg-friuli',         name: 'Friuli-Venezia Giulia', italian: 'Friuli-VG' },
+  { id: 'reg-emilia-romagna', name: 'Emilia-Romagna',        italian: 'The Food Valley' },
+  { id: 'reg-toscana',        name: 'Toscana',               italian: 'Tuscany' },
+  { id: 'reg-umbria',         name: 'Umbria',                italian: 'The Green Heart' },
+  { id: 'reg-marche',         name: 'Marche',                italian: 'Le Marche' },
+  { id: 'reg-lazio',          name: 'Lazio',                 italian: "The Eternal City's Region" },
+  { id: 'reg-abruzzo',        name: 'Abruzzo',               italian: 'Abruzzo' },
+  { id: 'reg-molise',         name: 'Molise',                italian: 'Molise' },
+  { id: 'reg-campania',       name: 'Campania',              italian: 'Land of Pizza & Pasta' },
+  { id: 'reg-puglia',         name: 'Puglia',                italian: 'The Heel of the Boot' },
+  { id: 'reg-basilicata',     name: 'Basilicata',            italian: 'Lucania' },
+  { id: 'reg-calabria',       name: 'Calabria',              italian: 'The Toe of the Boot' },
+  { id: 'reg-sicilia',        name: 'Sicilia',               italian: 'Sicily' },
+  { id: 'reg-sardegna',       name: 'Sardegna',              italian: 'Sardinia' },
+];
+
+let queue = [];
+let current = 0;
+let correctCount = 0;
+let wrongCount = 0;
+let missedRegions = [];
+let locked = false;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startGame() {
+  queue = shuffle(REGIONS);
+  current = 0;
+  correctCount = 0;
+  wrongCount = 0;
+  missedRegions = [];
+  locked = false;
+
+  REGIONS.forEach(r => {
+    const path = document.getElementById(r.id);
+    if (path) path.className = 'region-path';
+    const lbl = document.getElementById(`label-${r.id}`);
+    if (lbl) lbl.classList.remove('visible');
+  });
+
+  document.getElementById('score-correct').textContent = '0';
+  document.getElementById('score-wrong').textContent = '0';
+  clearFeedback();
+
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'block';
+
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= queue.length) { showResult(); return; }
+  locked = false;
+  const r = queue[current];
+  document.getElementById('q-name').textContent = r.name;
+  document.getElementById('q-italian').textContent = r.italian;
+  document.getElementById('progress-pill').textContent = `${current + 1} / ${queue.length}`;
+  clearFeedback();
+}
+
+function handleClick(id) {
+  if (locked) return;
+  const path = document.getElementById(id);
+  if (!path || path.classList.contains('found')) return;
+
+  locked = true;
+  const target = queue[current];
+
+  if (id === target.id) {
+    correctCount++;
+    document.getElementById('score-correct').textContent = correctCount;
+    path.classList.add('correct-flash');
+    showLabel(id);
+    setFeedback('✓ Correct!', 'correct');
+    setTimeout(() => {
+      path.classList.remove('correct-flash');
+      path.classList.add('found');
+      current++;
+      showQuestion();
+    }, 900);
+  } else {
+    wrongCount++;
+    document.getElementById('score-wrong').textContent = wrongCount;
+    missedRegions.push(target.name);
+    path.classList.add('wrong-flash');
+    const correctPath = document.getElementById(target.id);
+    if (correctPath) correctPath.classList.add('reveal-flash');
+    showLabel(target.id);
+    setFeedback(`✗ That's ${regionName(id)} — answer was ${target.name}`, 'wrong');
+    setTimeout(() => {
+      path.classList.remove('wrong-flash');
+      if (correctPath) {
+        correctPath.classList.remove('reveal-flash');
+        correctPath.classList.add('found');
+      }
+      current++;
+      showQuestion();
+    }, 1500);
+  }
+}
+
+function regionName(id) {
+  const r = REGIONS.find(r => r.id === id);
+  return r ? r.name : id;
+}
+
+function showLabel(id) {
+  const lbl = document.getElementById(`label-${id}`);
+  if (lbl) lbl.classList.add('visible');
+}
+
+function setFeedback(msg, type) {
+  const el = document.getElementById('feedback-msg');
+  el.textContent = msg;
+  el.className = `feedback-msg show ${type}`;
+}
+
+function clearFeedback() {
+  const el = document.getElementById('feedback-msg');
+  el.className = 'feedback-msg';
+  el.textContent = '';
+}
+
+function showResult() {
+  document.getElementById('game-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'flex';
+  document.getElementById('result-num').textContent = `${correctCount} / 20`;
+
+  const msgs = [
+    [20, 'Perfect score — you know Italy like a local!'],
+    [15, 'Excellent — a strong grasp of the Italian peninsula.'],
+    [10, 'A solid start — keep exploring the regions.'],
+    [0,  "Keep studying the map — Italy's regions await!"],
+  ];
+  document.getElementById('result-msg').textContent =
+    msgs.find(([min]) => correctCount >= min)[1];
+
+  const missedSec = document.getElementById('missed-section');
+  if (missedRegions.length > 0) {
+    missedSec.style.display = 'block';
+    document.getElementById('missed-chips').innerHTML =
+      missedRegions.map(n => `<span class="missed-chip">${n}</span>`).join('');
+  } else {
+    missedSec.style.display = 'none';
+  }
+}
+
+REGIONS.forEach(r => {
+  const el = document.getElementById(r.id);
+  if (el) el.addEventListener('click', () => handleClick(r.id));
+});
+</script>
+</body>
+</html>
